@@ -1,0 +1,642 @@
+-- =============================================
+--   UGC HUB — BASE PROTECTOR ONLY
+--   UI by Nei @nono2015_ on discord
+-- =============================================
+
+local Players              = game:GetService("Players")
+local TweenService         = game:GetService("TweenService")
+local RunService           = game:GetService("RunService")
+local UserInputService     = game:GetService("UserInputService")
+local TextChatService      = game:GetService("TextChatService")
+
+local player = Players.LocalPlayer
+
+-- =============================================
+--   CLEANUP
+-- =============================================
+if _G.UGCHubCleanup then pcall(_G.UGCHubCleanup) end
+local connections = {}
+_G.UGCHubCleanup = function()
+    for _, c in ipairs(connections) do pcall(function() c:Disconnect() end) end
+    connections = {}
+    local pg = player:FindFirstChild("PlayerGui")
+    if pg then
+        local g = pg:FindFirstChild("UGC_Hub")
+        if g then pcall(function() g:Destroy() end) end
+    end
+end
+
+-- =============================================
+--   COLORS
+-- =============================================
+local NEON_PURPLE   = Color3.fromRGB(157, 78, 221)
+local ACCENT_PURPLE = Color3.fromRGB(123, 44, 177)
+local LIGHT_PURPLE  = Color3.fromRGB(200, 150, 255)
+local BG_DARK       = Color3.fromRGB(12, 10, 18)
+local BTN_DARK      = Color3.fromRGB(22, 18, 32)
+local TAB_ON        = Color3.fromRGB(100, 35, 175)
+local TAB_OFF       = Color3.fromRGB(28, 18, 45)
+local BTN_GREEN     = Color3.fromRGB(30, 140, 65)
+local BTN_RED       = Color3.fromRGB(160, 30, 50)
+
+-- =============================================
+--   STATE
+-- =============================================
+local isAllowed          = false
+local allowDB            = false
+local BASE_DISTANCE      = 15
+local TP_DISTANCE        = 60
+local autoDefenseEnabled = false
+local antiTPEnabled      = false
+local antiTrapEnabled    = false
+local antiRagdollEnabled = false
+local espPlayersEnabled  = false
+local espTrapEnabled     = false
+local autoKickEnabled    = false
+local autoLaserEnabled   = false
+local triggeredPlayers   = {}
+local lastPositions      = {}
+local basePositions      = {}
+local laserCooldown      = false
+
+-- =============================================
+--   BASE PROTECTOR LOGIC
+-- =============================================
+
+-- fireBasePrompt — système de score, sans TP involontaire
+local function fireBasePrompt()
+    local best      = nil
+    local bestScore = -1
+
+    for _, p in pairs(workspace:GetDescendants()) do
+        if p:IsA("ProximityPrompt") then
+            local lo   = string.lower(p.ObjectText  or "")
+            local la   = string.lower(p.ActionText  or "")
+            local ln   = string.lower(p.Name        or "")
+            local lpar = string.lower(p.Parent and p.Parent.Name or "")
+
+            local score = 0
+            if lo:find("friend")   then score = score + 10 end
+            if la:find("friend")   then score = score + 10 end
+            if ln:find("friend")   then score = score + 10 end
+            if lpar:find("friend") then score = score + 10 end
+            if lo:find("allow")    then score = score + 8  end
+            if la:find("allow")    then score = score + 8  end
+            if lo:find("access")   then score = score + 6  end
+            if la:find("access")   then score = score + 6  end
+            if lo:find("base")     then score = score + 4  end
+            if la:find("base")     then score = score + 4  end
+            if la:find("toggle")   then score = score + 3  end
+            if ln:find("allow")    then score = score + 3  end
+            if ln:find("base")     then score = score + 2  end
+            if lpar:find("base")   then score = score + 2  end
+            if lpar:find("sign")   then score = score + 1  end
+            if lpar:find("plot")   then score = score + 1  end
+
+            if score > bestScore then
+                bestScore = score
+                best = p
+            end
+        end
+    end
+
+    if best and bestScore > 0 then
+        fireproximityprompt(best)
+        return true
+    end
+    return false
+end
+
+local function sendChat(msg)
+    pcall(function()
+        local ch = TextChatService.TextChannels and TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+        if ch then ch:SendAsync(msg)
+        else
+            local rs = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
+            if rs then rs:FindFirstChild("SayMessageRequest"):FireServer(msg, "All") end
+        end
+    end)
+end
+
+local function fireOnPlayer(plr)
+    if triggeredPlayers[plr] then return end; triggeredPlayers[plr] = true
+    task.spawn(function()
+        sendChat(";balloon " .. plr.Name); sendChat(";rocket " .. plr.Name)
+        sendChat(";tiny "    .. plr.Name); sendChat(";morph "  .. plr.Name)
+    end)
+end
+
+-- Scan base positions
+task.spawn(function()
+    task.wait(2)
+    local plots = workspace:FindFirstChild("Plots"); if not plots then return end
+    for _, plot in ipairs(plots:GetChildren()) do
+        local sign = plot:FindFirstChild("PlotSign")
+        if sign and sign:FindFirstChild("SurfaceGui") then
+            local fr  = sign.SurfaceGui:FindFirstChild("Frame")
+            local txt = fr and fr:FindFirstChild("TextLabel")
+            if txt and txt.Text:find(player.DisplayName) then
+                local pods = plot:FindFirstChild("AnimalPodiums")
+                if pods then
+                    for _, m in ipairs(pods:GetChildren()) do
+                        if m:IsA("Model") then table.insert(basePositions, m:GetPivot().Position) end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Anti Ragdoll
+local ARConns = {}
+local function enableAntiRagdoll()
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hum  = char:WaitForChild("Humanoid")
+    local anim = hum:WaitForChild("Animator")
+    local function isRag()
+        local s = hum:GetState()
+        return s == Enum.HumanoidStateType.Physics or s == Enum.HumanoidStateType.Ragdoll
+            or s == Enum.HumanoidStateType.FallingDown or s == Enum.HumanoidStateType.GettingUp
+    end
+    local function clean()
+        for _, o in pairs(char:GetDescendants()) do
+            if o:IsA("BallSocketConstraint") or o:IsA("NoCollisionConstraint") or o:IsA("HingeConstraint")
+            or o:IsA("BodyVelocity") or o:IsA("BodyPosition") or o:IsA("BodyGyro") then o:Destroy()
+            elseif o:IsA("Motor6D") then o.Enabled = true end
+        end
+        for _, t in pairs(anim:GetPlayingAnimationTracks()) do
+            local n = t.Animation and t.Animation.Name:lower() or ""
+            if n:find("rag") or n:find("fall") or n:find("hurt") or n:find("down") then t:Stop(0) end
+        end
+    end
+    table.insert(ARConns, hum.StateChanged:Connect(function()
+        if isRag() then hum:ChangeState(Enum.HumanoidStateType.Running); clean() end
+    end))
+    table.insert(ARConns, RunService.Heartbeat:Connect(function() if isRag() then clean() end end))
+    table.insert(ARConns, player.CharacterAdded:Connect(function(c)
+        char = c; hum = c:WaitForChild("Humanoid"); anim = hum:WaitForChild("Animator"); clean()
+    end)); clean()
+end
+local function disableAntiRagdoll()
+    for _, c in pairs(ARConns) do c:Disconnect() end; ARConns = {}
+end
+
+-- Trap ESP
+local trapESP = {} local processedTraps = {} local trapBarriers = {}
+local trapWatchConn, antiTrapWatchConn
+
+local function createTrapESP(model)
+    if trapESP[model] then return end
+    local pp = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart"); if not pp then return end
+    local data = {}
+    local hl = Instance.new("SelectionBox"); hl.Adornee = model; hl.Color3 = NEON_PURPLE
+    hl.LineThickness = 0.08; hl.SurfaceColor3 = NEON_PURPLE; hl.SurfaceTransparency = 0.55; hl.Parent = workspace; data.hl = hl
+    local bb = Instance.new("BillboardGui"); bb.Adornee = pp; bb.Size = UDim2.new(0, 90, 0, 40)
+    bb.StudsOffset = Vector3.new(0, 4, 0); bb.AlwaysOnTop = true; bb.MaxDistance = 300; bb.Parent = workspace
+    local l1 = Instance.new("TextLabel", bb); l1.Size = UDim2.new(1, 0, 0.6, 0); l1.BackgroundTransparency = 1
+    l1.Text = "⚠ Trap"; l1.TextColor3 = LIGHT_PURPLE; l1.TextStrokeTransparency = 0.1; l1.Font = Enum.Font.GothamBlack; l1.TextSize = 14
+    local l2 = Instance.new("TextLabel", bb); l2.Size = UDim2.new(1, 0, 0.4, 0); l2.Position = UDim2.new(0, 0, 0.6, 0)
+    l2.BackgroundTransparency = 1; l2.Text = "0s"; l2.TextColor3 = Color3.fromRGB(255, 220, 100); l2.Font = Enum.Font.GothamBold; l2.TextSize = 12
+    data.bb = bb; data.timerLbl = l2; data.spawnTime = tick(); trapESP[model] = data
+end
+
+local function removeTrapESP(model)
+    local d = trapESP[model]; if not d then return end
+    if d.hl and d.hl.Parent then d.hl:Destroy() end
+    if d.bb and d.bb.Parent then d.bb:Destroy() end; trapESP[model] = nil
+end
+
+local function createTrapBarrier(model)
+    if processedTraps[model] then return end; processedTraps[model] = true
+    local cf, sz = model:GetBoundingBox()
+    local bar = Instance.new("Part"); bar.Name = "TrapBarrier"; bar.Size = sz + Vector3.new(6, sz.Y, 6)
+    bar.CFrame = cf; bar.Anchored = true; bar.CanCollide = true; bar.CanQuery = false
+    bar.Transparency = 0.35; bar.Material = Enum.Material.Neon; bar.Color = NEON_PURPLE; bar.Parent = workspace
+    trapBarriers[model] = bar
+    for _, p in pairs(model:GetDescendants()) do
+        if p:IsA("BasePart") then p.CanCollide = false; p.Transparency = 1 end
+        if p:IsA("TouchTransmitter") then p:Destroy() end
+    end
+end
+
+local function enableESPTrap()
+    for _, o in pairs(workspace:GetDescendants()) do
+        if o:IsA("Model") and o.Name:lower():find("trap") then
+            local pp = o.PrimaryPart or o:FindFirstChildWhichIsA("BasePart"); if pp then createTrapESP(o) end
+        end
+    end
+    trapWatchConn = workspace.DescendantAdded:Connect(function(o)
+        task.wait(0.3)
+        if o:IsA("Model") and o.Name:lower():find("trap") and o.Parent then
+            createTrapESP(o)
+            if antiTrapEnabled then
+                local pp = o.PrimaryPart or o:FindFirstChildWhichIsA("BasePart")
+                if pp and pp.Anchored then createTrapBarrier(o) end
+            end
+        end
+    end)
+end
+local function disableESPTrap()
+    if trapWatchConn then trapWatchConn:Disconnect(); trapWatchConn = nil end
+    for m in pairs(trapESP) do removeTrapESP(m) end; trapESP = {}
+end
+
+local function enableAntiTrap()
+    for m in pairs(trapESP) do
+        local pp = m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart")
+        if pp and pp.Anchored then createTrapBarrier(m) end
+    end
+    antiTrapWatchConn = workspace.DescendantAdded:Connect(function(o)
+        if o:IsA("Model") and o.Name:lower():find("trap") then
+            task.wait(0.5)
+            if o.Parent then
+                local pp = o.PrimaryPart or o:FindFirstChildWhichIsA("BasePart")
+                if pp and pp.Anchored then createTrapESP(o); createTrapBarrier(o) end
+            end
+        end
+    end)
+end
+local function disableAntiTrap()
+    if antiTrapWatchConn then antiTrapWatchConn:Disconnect(); antiTrapWatchConn = nil end
+    for m, bar in pairs(trapBarriers) do
+        if bar and bar.Parent then bar:Destroy() end
+        if m and m.Parent then
+            for _, p in pairs(m:GetDescendants()) do
+                if p:IsA("BasePart") then p.CanCollide = true; p.Transparency = 0 end
+            end
+        end
+    end; trapBarriers = {}; processedTraps = {}
+end
+
+RunService.Heartbeat:Connect(function()
+    for _, d in pairs(trapESP) do
+        if d.timerLbl and d.timerLbl.Parent then d.timerLbl.Text = math.floor(tick() - d.spawnTime) .. "s" end
+    end
+end)
+
+-- Player ESP
+local espInst = {} local espConns = {} local espJoin, espLeave
+
+local function addPlayerESP(plr)
+    if plr == player or espInst[plr] then return end
+    local function build()
+        local char = plr.Character; if not char then return end
+        local head = char:FindFirstChild("Head"); if not head then return end
+        local bb = Instance.new("BillboardGui"); bb.Name = "ESP_" .. plr.Name
+        bb.Size = UDim2.new(0, 10, 0, 10); bb.StudsOffset = Vector3.new(0, 4, 0)
+        bb.AlwaysOnTop = true; bb.MaxDistance = 600; bb.Adornee = head; bb.Parent = head
+        local outer = Instance.new("Frame", bb); outer.Size = UDim2.new(1, 8, 1, 8); outer.Position = UDim2.new(0, -4, 0, -4)
+        outer.BackgroundColor3 = NEON_PURPLE; outer.BackgroundTransparency = 0.2; outer.BorderSizePixel = 0
+        Instance.new("UICorner", outer).CornerRadius = UDim.new(1, 0)
+        local inner = Instance.new("Frame", outer); inner.Size = UDim2.new(1, -4, 1, -4); inner.Position = UDim2.new(0, 2, 0, 2)
+        inner.BackgroundColor3 = LIGHT_PURPLE; inner.BackgroundTransparency = 0.1; inner.BorderSizePixel = 0
+        Instance.new("UICorner", inner).CornerRadius = UDim.new(1, 0)
+        local nm = Instance.new("TextLabel", bb); nm.Size = UDim2.new(0, 140, 0, 22); nm.Position = UDim2.new(0.5, -70, 1, 4)
+        nm.BackgroundTransparency = 1; nm.Text = plr.DisplayName; nm.TextColor3 = LIGHT_PURPLE
+        nm.TextStrokeTransparency = 0.2; nm.TextStrokeColor3 = ACCENT_PURPLE; nm.Font = Enum.Font.GothamBold; nm.TextSize = 13
+        local dl = Instance.new("TextLabel", bb); dl.Size = UDim2.new(0, 140, 0, 18); dl.Position = UDim2.new(0.5, -70, 1, 26)
+        dl.BackgroundTransparency = 1; dl.Text = "0m | 0s"; dl.TextColor3 = Color3.fromRGB(255, 220, 100); dl.Font = Enum.Font.Gotham; dl.TextSize = 11
+        espInst[plr] = {bb = bb, distLbl = dl, spawnTime = tick()}
+    end
+    build()
+    local c1 = plr.CharacterAdded:Connect(function()
+        task.wait(0.5); if espInst[plr] then espInst[plr].bb:Destroy(); espInst[plr] = nil end; build()
+    end)
+    local c2 = plr.CharacterRemoving:Connect(function()
+        if espInst[plr] then espInst[plr].bb:Destroy(); espInst[plr] = nil end
+    end); espConns[plr] = {c1, c2}
+end
+
+local function removePlayerESP(plr)
+    if espInst[plr] then espInst[plr].bb:Destroy(); espInst[plr] = nil end
+    if espConns[plr] then for _, c in pairs(espConns[plr]) do c:Disconnect() end; espConns[plr] = nil end
+end
+
+local function enableESPPlayers()
+    for _, p in ipairs(Players:GetPlayers()) do addPlayerESP(p) end
+    espJoin  = Players.PlayerAdded:Connect(addPlayerESP)
+    espLeave = Players.PlayerRemoving:Connect(removePlayerESP)
+end
+local function disableESPPlayers()
+    if espJoin  then espJoin:Disconnect();  espJoin  = nil end
+    if espLeave then espLeave:Disconnect(); espLeave = nil end
+    for _, p in ipairs(Players:GetPlayers()) do removePlayerESP(p) end
+end
+
+RunService.Heartbeat:Connect(function()
+    if not espPlayersEnabled then return end
+    local myChar = player.Character
+    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    for plr, d in pairs(espInst) do
+        if d and d.distLbl and d.distLbl.Parent then
+            local elapsed = math.floor(tick() - d.spawnTime); local dist = 0
+            if myRoot and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                dist = math.floor((plr.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude)
+            end; d.distLbl.Text = dist .. "m | " .. elapsed .. "s"
+        end
+    end
+end)
+
+-- Laser
+local function fireLaserAt(targetPlr)
+    if laserCooldown then return end; laserCooldown = true
+    task.spawn(function()
+        local char = player.Character; if not char then laserCooldown = false; return end
+        local hum  = char:FindFirstChildOfClass("Humanoid"); if not hum then laserCooldown = false; return end
+        local laser = player.Backpack:FindFirstChild("Laser Cape") or char:FindFirstChild("Laser Cape")
+        if not laser then laserCooldown = false; return end
+        if laser.Parent == player.Backpack then hum:EquipTool(laser); task.wait(0.15) end
+        local eq = char:FindFirstChild("Laser Cape"); if not eq then laserCooldown = false; return end
+        local tc = targetPlr.Character; if not tc then laserCooldown = false; return end
+        local torso = tc:FindFirstChild("UpperTorso") or tc:FindFirstChild("Torso") or tc:FindFirstChild("HumanoidRootPart")
+        if torso then
+            local fired = false
+            for _, v in pairs(eq:GetDescendants()) do
+                if v:IsA("RemoteEvent") then pcall(function() v:FireServer(torso.Position, torso) end); fired = true; break end
+            end; if not fired then pcall(function() eq:Activate() end) end
+        end; task.wait(1.2); laserCooldown = false
+    end)
+end
+
+-- Defense loop
+RunService.Heartbeat:Connect(function()
+    if not autoDefenseEnabled and not autoKickEnabled and not autoLaserEnabled then return end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local pos = plr.Character.HumanoidRootPart.Position; local nearBase = false
+            for _, bp in ipairs(basePositions) do
+                if (pos - bp).Magnitude <= BASE_DISTANCE then
+                    nearBase = true
+                    if autoDefenseEnabled then fireOnPlayer(plr) end
+                    if autoKickEnabled    then player:Kick("UGC Protected"); return end
+                    if autoLaserEnabled   then fireLaserAt(plr) end; break
+                end
+            end
+            if antiTPEnabled and lastPositions[plr] then
+                if (pos - lastPositions[plr]).Magnitude >= TP_DISTANCE then
+                    for _, bp in ipairs(basePositions) do
+                        if (pos - bp).Magnitude <= BASE_DISTANCE then
+                            if autoDefenseEnabled then fireOnPlayer(plr) end
+                            if autoKickEnabled    then player:Kick("UGC Protected"); return end
+                        end
+                    end
+                end
+            end
+            lastPositions[plr] = pos
+            if not nearBase then triggeredPlayers[plr] = nil end
+        end
+    end
+end)
+
+-- =============================================
+--   GUI
+-- =============================================
+local sg = Instance.new("ScreenGui", player.PlayerGui)
+sg.Name = "UGC_Hub"; sg.ResetOnSpawn = false
+
+local WIN_W, WIN_H = 300, 400
+
+local main = Instance.new("Frame", sg)
+main.Size = UDim2.new(0, WIN_W, 0, WIN_H)
+main.Position = UDim2.new(0.5, -WIN_W / 2, 0.5, -WIN_H / 2)
+main.BackgroundColor3 = BG_DARK; main.BackgroundTransparency = 0.12; main.ClipsDescendants = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 15)
+local mStroke = Instance.new("UIStroke", main); mStroke.Color = NEON_PURPLE; mStroke.Thickness = 2
+
+-- Title
+local titleLabel = Instance.new("TextLabel", main)
+titleLabel.Size = UDim2.new(1, 0, 0, 50); titleLabel.Text = "🛡️  Base Protector"
+titleLabel.TextColor3 = NEON_PURPLE; titleLabel.Font = Enum.Font.GothamBlack
+titleLabel.TextSize = 18; titleLabel.BackgroundTransparency = 1
+
+local divider = Instance.new("Frame", main)
+divider.Size = UDim2.new(0.85, 0, 0, 1); divider.Position = UDim2.new(0.075, 0, 0, 50)
+divider.BackgroundColor3 = NEON_PURPLE; divider.BackgroundTransparency = 0.4; divider.BorderSizePixel = 0
+
+-- =============================================
+--   SUB TAB BAR
+-- =============================================
+local subTabBar = Instance.new("Frame", main)
+subTabBar.Size = UDim2.new(0.9, 0, 0, 34); subTabBar.Position = UDim2.new(0.05, 0, 0, 56)
+subTabBar.BackgroundTransparency = 1
+
+local function makeSubTab(text, idx, total)
+    local w = 1 / total
+    local btn = Instance.new("TextButton", subTabBar)
+    btn.Size = UDim2.new(w, -4, 1, 0); btn.Position = UDim2.new(w * (idx - 1), idx == 1 and 0 or 4, 0, 0)
+    btn.BackgroundColor3 = TAB_OFF; btn.Text = text; btn.TextColor3 = LIGHT_PURPLE
+    btn.Font = Enum.Font.GothamBold; btn.TextSize = 11; btn.AutoButtonColor = false
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8); return btn
+end
+
+local stFriends = makeSubTab("🤝 Friends", 1, 3)
+local stDefense = makeSubTab("🛡 Defense", 2, 3)
+local stESP     = makeSubTab("👁 ESP",     3, 3)
+stFriends.BackgroundColor3 = TAB_ON
+
+local CONTENT_Y = 97
+local CONTENT_H = WIN_H - CONTENT_Y - 40
+
+local function makePanel()
+    local f = Instance.new("Frame", main)
+    f.Size = UDim2.new(0.9, 0, 0, CONTENT_H); f.Position = UDim2.new(0.05, 0, 0, CONTENT_Y)
+    f.BackgroundTransparency = 1; f.Visible = false; return f
+end
+
+local spFriends = makePanel(); spFriends.Visible = true
+local spDefense = makePanel()
+local spESP     = makePanel()
+
+local function switchSub(t)
+    spFriends.Visible = t == "f"; spDefense.Visible = t == "d"; spESP.Visible = t == "e"
+    TweenService:Create(stFriends, TweenInfo.new(0.15), {BackgroundColor3 = t == "f" and TAB_ON or TAB_OFF}):Play()
+    TweenService:Create(stDefense, TweenInfo.new(0.15), {BackgroundColor3 = t == "d" and TAB_ON or TAB_OFF}):Play()
+    TweenService:Create(stESP,     TweenInfo.new(0.15), {BackgroundColor3 = t == "e" and TAB_ON or TAB_OFF}):Play()
+end
+
+stFriends.MouseButton1Click:Connect(function() switchSub("f") end)
+stDefense.MouseButton1Click:Connect(function() switchSub("d") end)
+stESP.MouseButton1Click:Connect(function()     switchSub("e") end)
+
+-- =============================================
+--   FACTORIES
+-- =============================================
+local function createBtn(parent, y, text, defaultColor)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(1, 0, 0, 50); btn.Position = UDim2.new(0, 0, 0, y)
+    btn.BackgroundColor3 = defaultColor or BTN_DARK; btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+    btn.Font = Enum.Font.GothamBold; btn.TextSize = 13; btn.Text = text; btn.AutoButtonColor = false
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+    local stroke = Instance.new("UIStroke", btn); stroke.Color = Color3.fromRGB(60, 30, 90); stroke.Thickness = 1.2
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn,    TweenInfo.new(0.18), {BackgroundColor3 = ACCENT_PURPLE}):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.18), {Color = NEON_PURPLE}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        local ac = btn:GetAttribute("ActiveColor")
+        TweenService:Create(btn,    TweenInfo.new(0.18), {BackgroundColor3 = ac or defaultColor or BTN_DARK}):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.18), {Color = Color3.fromRGB(60, 30, 90)}):Play()
+    end); return btn
+end
+
+local function makeToggle(parent, y, label)
+    local container = Instance.new("Frame", parent)
+    container.Size = UDim2.new(1, 0, 0, 38); container.Position = UDim2.new(0, 0, 0, y); container.BackgroundTransparency = 1
+    local lbl = Instance.new("TextLabel", container)
+    lbl.Size = UDim2.new(1, -54, 1, 0); lbl.BackgroundTransparency = 1; lbl.Text = label
+    lbl.TextColor3 = LIGHT_PURPLE; lbl.TextSize = 13; lbl.Font = Enum.Font.GothamMedium; lbl.TextXAlignment = Enum.TextXAlignment.Left
+    local pill = Instance.new("TextButton", container)
+    pill.Size = UDim2.new(0, 44, 0, 22); pill.Position = UDim2.new(1, -44, 0.5, -11)
+    pill.BackgroundColor3 = Color3.fromRGB(40, 25, 60); pill.Text = ""; pill.AutoButtonColor = false
+    Instance.new("UICorner", pill).CornerRadius = UDim.new(1, 0)
+    local dot = Instance.new("Frame", pill)
+    dot.Size = UDim2.new(0, 15, 0, 15); dot.Position = UDim2.new(0, 3, 0.5, -7.5)
+    dot.BackgroundColor3 = Color3.fromRGB(90, 50, 140); Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+    local state = false
+    local function setState(v)
+        state = v
+        TweenService:Create(dot,  TweenInfo.new(0.14), {Position = v and UDim2.new(1, -18, 0.5, -7.5) or UDim2.new(0, 3, 0.5, -7.5), BackgroundColor3 = v and LIGHT_PURPLE or Color3.fromRGB(90, 50, 140)}):Play()
+        TweenService:Create(pill, TweenInfo.new(0.14), {BackgroundColor3 = v and NEON_PURPLE or Color3.fromRGB(40, 25, 60)}):Play()
+    end
+    return pill, setState, function() return state end
+end
+
+-- =============================================
+--   SUB: FRIENDS
+-- =============================================
+local bAllow = createBtn(spFriends, 0, "🔴  Base Access : DISALLOW", BTN_RED)
+bAllow:SetAttribute("ActiveColor", BTN_RED)
+
+bAllow.MouseButton1Click:Connect(function()
+    if allowDB then return end
+    allowDB = true
+
+    local ok = fireBasePrompt()
+
+    if ok then
+        isAllowed = not isAllowed
+        local col = isAllowed and BTN_GREEN or BTN_RED
+        bAllow.Text = isAllowed and "🟢  Base Access : ALLOW" or "🔴  Base Access : DISALLOW"
+        bAllow:SetAttribute("ActiveColor", col)
+        TweenService:Create(bAllow, TweenInfo.new(0.3), {BackgroundColor3 = col}):Play()
+    else
+        bAllow.Text = "⚠️  Prompt Not Found"
+        task.wait(1.5)
+        bAllow.Text = isAllowed and "🟢  Base Access : ALLOW" or "🔴  Base Access : DISALLOW"
+    end
+
+    task.wait(1); allowDB = false
+end)
+
+-- Séparateur
+local fd1 = Instance.new("Frame", spFriends)
+fd1.Size = UDim2.new(1, 0, 0, 1); fd1.Position = UDim2.new(0, 0, 0, 58)
+fd1.BackgroundColor3 = NEON_PURPLE; fd1.BackgroundTransparency = 0.6; fd1.BorderSizePixel = 0
+
+-- Statut dynamique
+local statusBox = Instance.new("Frame", spFriends)
+statusBox.Size = UDim2.new(1, 0, 0, 38); statusBox.Position = UDim2.new(0, 0, 0, 66)
+statusBox.BackgroundColor3 = Color3.fromRGB(22, 14, 38); statusBox.BackgroundTransparency = 0.3; statusBox.BorderSizePixel = 0
+Instance.new("UICorner", statusBox).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", statusBox).Color = NEON_PURPLE
+
+local statusLbl = Instance.new("TextLabel", statusBox)
+statusLbl.Size = UDim2.new(1, 0, 1, 0); statusLbl.BackgroundTransparency = 1
+statusLbl.Text = "🔴  Accès : Fermé"; statusLbl.TextColor3 = Color3.fromRGB(255, 100, 120)
+statusLbl.Font = Enum.Font.GothamBold; statusLbl.TextSize = 13
+
+RunService.Heartbeat:Connect(function()
+    if statusLbl and statusLbl.Parent then
+        statusLbl.Text       = isAllowed and "🟢  Accès : Ouvert" or "🔴  Accès : Fermé"
+        statusLbl.TextColor3 = isAllowed and Color3.fromRGB(100, 255, 150) or Color3.fromRGB(255, 100, 120)
+    end
+end)
+
+-- Séparateur
+local fd2 = Instance.new("Frame", spFriends)
+fd2.Size = UDim2.new(1, 0, 0, 1); fd2.Position = UDim2.new(0, 0, 0, 112)
+fd2.BackgroundColor3 = NEON_PURPLE; fd2.BackgroundTransparency = 0.6; fd2.BorderSizePixel = 0
+
+-- Info
+local infoLbl = Instance.new("TextLabel", spFriends)
+infoLbl.Size = UDim2.new(1, 0, 0, 55); infoLbl.Position = UDim2.new(0, 0, 0, 120)
+infoLbl.BackgroundColor3 = Color3.fromRGB(22, 14, 38); infoLbl.BackgroundTransparency = 0.3
+infoLbl.Text = "ℹ️ Déclenche le ProximityPrompt\npour ouvrir / fermer l'accès à ta base.\nSans TP involontaire."
+infoLbl.TextColor3 = LIGHT_PURPLE; infoLbl.Font = Enum.Font.Gotham; infoLbl.TextSize = 11; infoLbl.TextWrapped = true
+Instance.new("UICorner", infoLbl).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", infoLbl).Color = NEON_PURPLE
+
+-- =============================================
+--   SUB: DEFENSE
+-- =============================================
+local defData = {
+    {label = "Auto Defense", y = 0},   {label = "Anti TP",      y = 45},
+    {label = "Anti Trap",    y = 90},  {label = "Anti Ragdoll", y = 135},
+    {label = "Auto Kick",    y = 180}, {label = "Auto Laser",   y = 225},
+}
+for _, t in ipairs(defData) do
+    local pill, setState, getState = makeToggle(spDefense, t.y, t.label)
+    pill.MouseButton1Click:Connect(function()
+        local v = not getState(); setState(v)
+        if     t.label == "Auto Defense" then autoDefenseEnabled = v; if not v then triggeredPlayers = {} end
+        elseif t.label == "Anti TP"      then antiTPEnabled      = v
+        elseif t.label == "Anti Trap"    then antiTrapEnabled    = v; if v then enableAntiTrap()    else disableAntiTrap()    end
+        elseif t.label == "Anti Ragdoll" then antiRagdollEnabled = v; if v then enableAntiRagdoll() else disableAntiRagdoll() end
+        elseif t.label == "Auto Kick"    then autoKickEnabled    = v
+        elseif t.label == "Auto Laser"   then autoLaserEnabled   = v
+        end
+    end)
+end
+
+-- =============================================
+--   SUB: ESP
+-- =============================================
+local espData = {{label = "ESP Players", y = 0}, {label = "ESP Trap", y = 45}}
+for _, t in ipairs(espData) do
+    local pill, setState, getState = makeToggle(spESP, t.y, t.label)
+    pill.MouseButton1Click:Connect(function()
+        local v = not getState(); setState(v)
+        if     t.label == "ESP Players" then espPlayersEnabled = v; if v then enableESPPlayers() else disableESPPlayers() end
+        elseif t.label == "ESP Trap"    then espTrapEnabled    = v; if v then enableESPTrap()    else disableESPTrap()    end
+        end
+    end)
+end
+
+local espInfo = Instance.new("TextLabel", spESP)
+espInfo.Size = UDim2.new(1, 0, 0, 55); espInfo.Position = UDim2.new(0, 0, 0, 96)
+espInfo.BackgroundColor3 = Color3.fromRGB(22, 14, 38); espInfo.BackgroundTransparency = 0.3
+espInfo.Text = "👁 Players : dot + name + dist + timer\n⚠ Trap : box violet + label + spawn timer"
+espInfo.TextColor3 = LIGHT_PURPLE; espInfo.Font = Enum.Font.Gotham; espInfo.TextSize = 11; espInfo.TextWrapped = true
+Instance.new("UICorner", espInfo).CornerRadius = UDim.new(0, 10)
+Instance.new("UIStroke", espInfo).Color = NEON_PURPLE
+
+-- =============================================
+--   FOOTER
+-- =============================================
+local footer = Instance.new("Frame", main)
+footer.Size = UDim2.new(1, 0, 0, 35); footer.Position = UDim2.new(0, 0, 1, -35); footer.BackgroundTransparency = 1
+local footerLabel = Instance.new("TextLabel", footer)
+footerLabel.Size = UDim2.new(1, 0, 1, 0); footerLabel.BackgroundTransparency = 1
+footerLabel.Text = "Made By Nei @nono2015_ on discord"
+footerLabel.Font = Enum.Font.GothamBold; footerLabel.TextSize = 11; footerLabel.TextColor3 = Color3.fromRGB(120, 80, 180)
+
+-- =============================================
+--   SMOOTH DRAGGING
+-- =============================================
+local dragging, dragStart, startPos
+main.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true; dragStart = input.Position; startPos = main.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        main.Position = main.Position:Lerp(UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y), 0.18)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+end)
+
+print("[UGC Hub] Base Protector Loaded")
