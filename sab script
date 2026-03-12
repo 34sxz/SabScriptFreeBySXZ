@@ -1,0 +1,204 @@
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+ 
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BoostGUI"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.ResetOnSpawn = false
+ 
+-- Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Parent = screenGui
+mainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+mainFrame.BorderSizePixel = 0
+mainFrame.Position = UDim2.new(0.8, 0, 0.5, 0)
+mainFrame.Size = UDim2.new(0, 250, 0, 300)
+mainFrame.Active = true
+mainFrame.Draggable = true
+ 
+-- Title Label
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "TitleLabel"
+titleLabel.Parent = mainFrame
+titleLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+titleLabel.BorderSizePixel = 0
+titleLabel.Size = UDim2.new(1, 0, 0, 40)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.Text = "Speed & Jump Boost"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 18
+ 
+-- Toggle Button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Name = "ToggleButton"
+toggleButton.Parent = mainFrame
+toggleButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+toggleButton.BorderSizePixel = 0
+toggleButton.Position = UDim2.new(0.5, -60, 0.2, 0)
+toggleButton.Size = UDim2.new(0, 120, 0, 30)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.Text = "OFF"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.TextSize = 14
+ 
+-- Speed Boost Label
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Name = "SpeedLabel"
+speedLabel.Parent = mainFrame
+speedLabel.BackgroundTransparency = 1
+speedLabel.Position = UDim2.new(0.1, 0, 0.4, 0)
+speedLabel.Size = UDim2.new(0, 80, 0, 20)
+speedLabel.Font = Enum.Font.SourceSans
+speedLabel.Text = "Speed: 50"
+speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedLabel.TextSize = 14
+speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+ 
+-- Speed Slider
+local speedSlider = Instance.new("TextButton")
+speedSlider.Name = "SpeedSlider"
+speedSlider.Parent = mainFrame
+speedSlider.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+speedSlider.BorderSizePixel = 0
+speedSlider.Position = UDim2.new(0.1, 0, 0.5, 0)
+speedSlider.Size = UDim2.new(0, 200, 0, 10)
+speedSlider.AutoButtonColor = false
+ 
+local speedSliderButton = Instance.new("TextButton")
+speedSliderButton.Name = "SliderButton"
+speedSliderButton.Parent = speedSlider
+speedSliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+speedSliderButton.BorderSizePixel = 0
+speedSliderButton.Size = UDim2.new(0, 20, 0, 20)
+speedSliderButton.Position = UDim2.new(0.5, -10, -0.5, 0)
+speedSliderButton.AutoButtonColor = false
+ 
+-- Jump Boost Label
+local jumpLabel = Instance.new("TextLabel")
+jumpLabel.Name = "JumpLabel"
+jumpLabel.Parent = mainFrame
+jumpLabel.BackgroundTransparency = 1
+jumpLabel.Position = UDim2.new(0.1, 0, 0.7, 0)
+jumpLabel.Size = UDim2.new(0, 80, 0, 20)
+jumpLabel.Font = Enum.Font.SourceSans
+jumpLabel.Text = "Jump: 50"
+jumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+jumpLabel.TextSize = 14
+jumpLabel.TextXAlignment = Enum.TextXAlignment.Left
+ 
+-- Jump Slider
+local jumpSlider = Instance.new("TextButton")
+jumpSlider.Name = "JumpSlider"
+jumpSlider.Parent = mainFrame
+jumpSlider.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+jumpSlider.BorderSizePixel = 0
+jumpSlider.Position = UDim2.new(0.1, 0, 0.8, 0)
+jumpSlider.Size = UDim2.new(0, 200, 0, 10)
+jumpSlider.AutoButtonColor = false
+ 
+local jumpSliderButton = Instance.new("TextButton")
+jumpSliderButton.Name = "SliderButton"
+jumpSliderButton.Parent = jumpSlider
+jumpSliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+jumpSliderButton.BorderSizePixel = 0
+jumpSliderButton.Size = UDim2.new(0, 20, 0, 20)
+jumpSliderButton.Position = UDim2.new(0.5, -10, -0.5, 0)
+jumpSliderButton.AutoButtonColor = false
+ 
+-- Variables
+local isEnabled = false
+local speedValue = 50
+local jumpValue = 50
+local defaultWalkSpeed = 16
+local defaultJumpPower = 50
+ 
+-- Slider functionality
+local function updateSlider(slider, button, value, label)
+    local sliderSize = slider.AbsoluteSize.X
+    local buttonSize = button.AbsoluteSize.X
+    local maxPosition = sliderSize - buttonSize
+    local position = (value / 100) * maxPosition
+    button.Position = UDim2.new(0, position, -0.5, 0)
+    label.Text = label.Name == "SpeedLabel" and "Speed: " .. value or "Jump: " .. value
+end
+ 
+-- Speed slider dragging
+local speedDragging = false
+speedSliderButton.MouseButton1Down:Connect(function()
+    speedDragging = true
+end)
+ 
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if speedDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local relativeX = input.Position.X - speedSlider.AbsolutePosition.X
+        local sliderSize = speedSlider.AbsoluteSize.X
+        local buttonSize = speedSliderButton.AbsoluteSize.X
+        local maxPosition = sliderSize - buttonSize
+        local position = math.clamp(relativeX - buttonSize/2, 0, maxPosition)
+        speedSliderButton.Position = UDim2.new(0, position, -0.5, 0)
+        speedValue = math.floor((position / maxPosition) * 100)
+        speedLabel.Text = "Speed: " .. speedValue
+        
+        if isEnabled then
+            character.Humanoid.WalkSpeed = defaultWalkSpeed + (speedValue * 0.5)
+        end
+    end
+end)
+ 
+game:GetService("UserInputService").InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        speedDragging = false
+    end
+end)
+ 
+-- Jump slider dragging
+local jumpDragging = false
+jumpSliderButton.MouseButton1Down:Connect(function()
+    jumpDragging = true
+end)
+ 
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if jumpDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local relativeX = input.Position.X - jumpSlider.AbsolutePosition.X
+        local sliderSize = jumpSlider.AbsoluteSize.X
+        local buttonSize = jumpSliderButton.AbsoluteSize.X
+        local maxPosition = sliderSize - buttonSize
+        local position = math.clamp(relativeX - buttonSize/2, 0, maxPosition)
+        jumpSliderButton.Position = UDim2.new(0, position, -0.5, 0)
+        jumpValue = math.floor((position / maxPosition) * 100)
+        jumpLabel.Text = "Jump: " .. jumpValue
+        
+        if isEnabled then
+            character.Humanoid.JumpPower = defaultJumpPower + (jumpValue * 0.5)
+        end
+    end
+end)
+ 
+game:GetService("UserInputService").InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        jumpDragging = false
+    end
+end)
+ 
+-- Toggle button functionality
+toggleButton.MouseButton1Click:Connect(function()
+    isEnabled = not isEnabled
+    
+    if isEnabled then
+        toggleButton.BackgroundColor3 = Color3.fromRGB(50, 255, 50)
+        toggleButton.Text = "ON"
+        character.Humanoid.WalkSpeed = defaultWalkSpeed + (speedValue * 0.5)
+        character.Humanoid.JumpPower = defaultJumpPower + (jumpValue * 0.5)
+    else
+        toggleButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+        toggleButton.Text = "OFF"
+        character.Humanoid.WalkSpeed = defaultWalkSpeed
+        character.Humanoid.JumpPower = defaultJumpPower
+    end
+end)
+ 
+-- Initialize sliders
+updateSlider(speedSlider, speedSliderButton, speedValue, speedLabel)
+updateSlider(jumpSlider, jumpSliderButton, jumpValue, jumpLabel)
