@@ -1,14 +1,8 @@
-pcall(function() print(table.create(1e5, "Detected by nemesis: https://discord.gg/DXNhhnExR ")) end)
+pcall(function() print(table.create(1e5, "34S Hub Duel | Clean Build")) end)
 game:GetService("RunService").Heartbeat:Wait()
 
 --- ANTI-LOGGER BYPASS ---
--- The logger checks debug.traceback() for certain UI library names (like 'rayfield') to avoid logging them.
--- By putting our entire script inside this function, the logger completely ignores everything inside it.
 local function rayfield_interface()
-    
-    -- ==============================================================================
-    -- START OF YOUR ORIGINAL ACTUAL SCRIPT
-    -- ==============================================================================
     
     -- Services
     local Players = game:GetService("Players")
@@ -25,10 +19,8 @@ local function rayfield_interface()
     local PlayerModule = require(LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule"))
     local Controls = PlayerModule:GetControls()
     
-    -- Platform Detection
     local IS_MOBILE = UserInputService.TouchEnabled
     
-    -- Configuration
     local CONFIG = {
         AUTO_STEAL_NEAREST = false,
         STEAL_RADIUS = 29, 
@@ -42,7 +34,7 @@ local function rayfield_interface()
         SPEED_CUSTOMIZER = false,
         FLOAT_FOLLOW = false,
         FLOAT = false,
-        UP_DOWN_FLOAT = false, -- New Up/Down Float
+        UP_DOWN_FLOAT = false,
         AUTO_SENT_TP_ON_HIT = false,
         AUTO_ACCEPTED_TP_ON_HIT = false,
         AUTO_RIGHT = false,
@@ -64,11 +56,9 @@ local function rayfield_interface()
     local function canFastMove(hrp, hum, dir)
         if hrp.Anchored then return false end
         if hum.WalkSpeed < 5 then return false end
-       
         local params = RaycastParams.new()
         params.FilterDescendantsInstances = {LocalPlayer.Character}
         params.FilterType = Enum.RaycastFilterType.Exclude
-       
         local flatDir = Vector3.new(dir.X, 0, dir.Z).Unit
         local result = workspace:Raycast(hrp.Position, flatDir * 4, params)
         if result and result.Instance and result.Instance.CanCollide then
@@ -78,14 +68,13 @@ local function rayfield_interface()
     end
 
     -- ==============================================================================
-    -- WATERMELON ANTI-LAG (1 BUTTON FPS BOOST)
+    -- ANTI-LAG BOOST
     -- ==============================================================================
     local optConnections = {}
     local optDestroyedCache = {}
 
     local function applyOpt(obj)
         if not obj:IsDescendantOf(Workspace) and not obj:IsDescendantOf(Lighting) then return end
-        
         if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") or obj:IsA("Sparkles") or
            obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("BloomEffect") or obj:IsA("BlurEffect") or
            obj:IsA("SunRaysEffect") or obj:IsA("ColorCorrectionEffect") or obj:IsA("DepthOfFieldEffect") or
@@ -96,7 +85,6 @@ local function rayfield_interface()
             end
             return
         end
-        
         if obj:IsA("Decal") or obj:IsA("Texture") then 
             pcall(function() obj:Destroy() end) 
             return 
@@ -113,10 +101,8 @@ local function rayfield_interface()
     local function startBoost()
         for _, obj in ipairs(Workspace:GetDescendants()) do applyOpt(obj) end
         for _, obj in ipairs(Lighting:GetDescendants()) do applyOpt(obj) end
-        
         table.insert(optConnections, Workspace.DescendantAdded:Connect(applyOpt))
         table.insert(optConnections, Lighting.DescendantAdded:Connect(applyOpt))
-        
         pcall(function()
             Lighting.GlobalShadows = false
             Lighting.Brightness = 1
@@ -133,7 +119,6 @@ local function rayfield_interface()
         for _, c in ipairs(optConnections) do pcall(function() c:Disconnect() end) end
         optConnections = {}
         optDestroyedCache = {}
-        
         pcall(function()
             Lighting.GlobalShadows = true
             Lighting.Brightness = 2
@@ -204,7 +189,7 @@ local function rayfield_interface()
                     local box = Instance.new("BoxHandleAdornment")
                     box.Adornee = char.HumanoidRootPart
                     box.Size = Vector3.new(5, 6.5, 5)
-                    box.Color3 = Color3.fromRGB(255, 20, 20)
+                    box.Color3 = Color3.fromRGB(255, 255, 255)
                     box.Transparency = 0.5
                     box.ZIndex = 0
                     box.AlwaysOnTop = true
@@ -221,6 +206,9 @@ local function rayfield_interface()
         if VisualsConfig.Boxes[p] then VisualsConfig.Boxes[p]:Destroy() VisualsConfig.Boxes[p] = nil end
     end)
     
+    -- ==============================================================================
+    -- SPEED CUSTOMIZER UI (CLEAN THEME)
+    -- ==============================================================================
     local function createSpeedUI()
         local SGui = Instance.new("ScreenGui")
         SGui.Name = "SpeedUI"
@@ -230,12 +218,12 @@ local function rayfield_interface()
         local SMain = Instance.new("Frame", SGui)
         SMain.Size = UDim2.new(0, 220, 0, 180)
         SMain.Position = UDim2.new(0.5, -110, 0.4, 0)
-        SMain.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-        SMain.BackgroundTransparency = 0.1
+        SMain.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+        SMain.BackgroundTransparency = 0.05
         Instance.new("UICorner", SMain).CornerRadius = UDim.new(0, 10)
         local stroke = Instance.new("UIStroke", SMain)
-        stroke.Color = Color3.fromRGB(240, 50, 50)
-        stroke.Thickness = 2
+        stroke.Color = Color3.fromRGB(80, 80, 100)
+        stroke.Thickness = 1.5
       
         local d, ds, sp
         SMain.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then d = true; ds = i.Position; sp = SMain.Position end end)
@@ -243,33 +231,54 @@ local function rayfield_interface()
         UserInputService.InputChanged:Connect(function(i) if d and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then SMain.Position = UDim2.new(sp.X.Scale, sp.X.Offset + (i.Position.X - ds.X), sp.Y.Scale, sp.Y.Offset + (i.Position.Y - ds.Y)) end end)
         
         local Title = Instance.new("TextLabel", SMain)
-        Title.Size = UDim2.new(1, 0, 0, 25); Title.Position = UDim2.new(0, 12, 0, 8); Title.BackgroundTransparency = 1; Title.Text = "Speed Customizer"; Title.TextColor3 = Color3.fromRGB(240, 50, 50); Title.Font = Enum.Font.GothamBold; Title.TextSize = 12; Title.TextXAlignment = Enum.TextXAlignment.Left
+        Title.Size = UDim2.new(1, 0, 0, 25); Title.Position = UDim2.new(0, 12, 0, 8); Title.BackgroundTransparency = 1
+        Title.Text = "Speed Customizer"; Title.TextColor3 = Color3.fromRGB(220, 220, 240)
+        Title.Font = Enum.Font.GothamBold; Title.TextSize = 12; Title.TextXAlignment = Enum.TextXAlignment.Left
         
         local TglHeader = Instance.new("Frame", SMain)
         TglHeader.Size = UDim2.new(1, -20, 0, 30); TglHeader.Position = UDim2.new(0, 10, 0, 38)
-        TglHeader.BackgroundColor3 = Color3.fromRGB(150, 30, 30)
+        TglHeader.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
         Instance.new("UICorner", TglHeader).CornerRadius = UDim.new(0, 6)
       
         local TglBtn = Instance.new("TextButton", TglHeader)
-        TglBtn.Size = UDim2.new(1, 0, 1, 0); TglBtn.BackgroundTransparency = 1; TglBtn.Text = "OFF"; TglBtn.TextColor3 = Color3.new(1,1,1); TglBtn.Font = Enum.Font.GothamBold; TglBtn.TextSize = 14
+        TglBtn.Size = UDim2.new(1, 0, 1, 0); TglBtn.BackgroundTransparency = 1; TglBtn.Text = "OFF"
+        TglBtn.TextColor3 = Color3.new(1,1,1); TglBtn.Font = Enum.Font.GothamBold; TglBtn.TextSize = 14
       
         local function createInput(lbl, val, pos)
-            local l = Instance.new("TextLabel", SMain); l.Size = UDim2.new(0.6, 0, 0, 25); l.Position = UDim2.new(0, 12, 0, pos); l.BackgroundTransparency = 1; l.Text = lbl; l.TextColor3 = Color3.fromRGB(140, 140, 140); l.Font = Enum.Font.Gotham; l.TextSize = 12; l.TextXAlignment = Enum.TextXAlignment.Left
-            local box = Instance.new("TextBox", SMain); box.Size = UDim2.new(0, 70, 0, 22); box.Position = UDim2.new(1, -80, 0, pos + 1.5); box.BackgroundColor3 = Color3.fromRGB(22, 18, 30); box.Text = tostring(val); box.TextColor3 = Color3.new(1,1,1); box.Font = Enum.Font.GothamBold; box.TextSize = 12
+            local l = Instance.new("TextLabel", SMain)
+            l.Size = UDim2.new(0.6, 0, 0, 25); l.Position = UDim2.new(0, 12, 0, pos)
+            l.BackgroundTransparency = 1; l.Text = lbl; l.TextColor3 = Color3.fromRGB(160, 160, 180)
+            l.Font = Enum.Font.Gotham; l.TextSize = 12; l.TextXAlignment = Enum.TextXAlignment.Left
+            local box = Instance.new("TextBox", SMain)
+            box.Size = UDim2.new(0, 70, 0, 22); box.Position = UDim2.new(1, -80, 0, pos + 1.5)
+            box.BackgroundColor3 = Color3.fromRGB(30, 30, 42); box.Text = tostring(val)
+            box.TextColor3 = Color3.new(1,1,1); box.Font = Enum.Font.GothamBold; box.TextSize = 12
             Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
             return box
         end
       
-        local InSpeed = createInput("Speed", SpeedMod.Speed, 75); local InSteal = createInput("Steal Spd", SpeedMod.Steal, 105); local InJump = createInput("Jump", SpeedMod.Jump, 135)
+        local InSpeed = createInput("Speed", SpeedMod.Speed, 75)
+        local InSteal = createInput("Steal Spd", SpeedMod.Steal, 105)
+        local InJump = createInput("Jump", SpeedMod.Jump, 135)
       
-        TglBtn.MouseButton1Click:Connect(function() SpeedMod.Enabled = not SpeedMod.Enabled; TglBtn.Text = SpeedMod.Enabled and "ON" or "OFF"; TglHeader.BackgroundColor3 = SpeedMod.Enabled and Color3.fromRGB(240, 50, 50) or Color3.fromRGB(150, 30, 30) end)
+        TglBtn.MouseButton1Click:Connect(function()
+            SpeedMod.Enabled = not SpeedMod.Enabled
+            TglBtn.Text = SpeedMod.Enabled and "ON" or "OFF"
+            TglHeader.BackgroundColor3 = SpeedMod.Enabled and Color3.fromRGB(60, 60, 90) or Color3.fromRGB(40, 40, 55)
+        end)
       
-        local function setupBox(box, key) box.FocusLost:Connect(function() local n = tonumber(box.Text) if n then SpeedMod[key] = n else box.Text = tostring(SpeedMod[key]) end end) end
-        setupBox(InSpeed, "Speed"); setupBox(InSteal, "Steal"); setupBox(InJump, "Jump"); return SGui
+        local function setupBox(box, key)
+            box.FocusLost:Connect(function()
+                local n = tonumber(box.Text)
+                if n then SpeedMod[key] = n else box.Text = tostring(SpeedMod[key]) end
+            end)
+        end
+        setupBox(InSpeed, "Speed"); setupBox(InSteal, "Steal"); setupBox(InJump, "Jump")
+        return SGui
     end
 
     -- ==============================================================================
-    -- STEAL HUD (NEMESIS THEMED)
+    -- STEAL HUD (CLEAN THEME)
     -- ==============================================================================
     local function createStealHUD()
         local HUDGui = Instance.new("ScreenGui")
@@ -280,12 +289,12 @@ local function rayfield_interface()
         local Main = Instance.new("Frame", HUDGui)
         Main.Size = UDim2.new(0, 260, 0, 65)
         Main.Position = UDim2.new(0.5, -130, 0.8, 0)
-        Main.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+        Main.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
         Main.BackgroundTransparency = 0.05
         Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
         
         local Stroke = Instance.new("UIStroke", Main)
-        Stroke.Color = Color3.fromRGB(150, 30, 30)
+        Stroke.Color = Color3.fromRGB(70, 70, 95)
         Stroke.Thickness = 1.5
         
         local drag, ds, sp
@@ -298,7 +307,7 @@ local function rayfield_interface()
         PctLabel.Position = UDim2.new(0, 10, 0, 5)
         PctLabel.BackgroundTransparency = 1
         PctLabel.Text = "0%"
-        PctLabel.TextColor3 = Color3.fromRGB(255, 60, 50)
+        PctLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
         PctLabel.Font = Enum.Font.GothamBold
         PctLabel.TextSize = 11
         PctLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -308,19 +317,19 @@ local function rayfield_interface()
         Title.Position = UDim2.new(0, 0, 0, 5)
         Title.BackgroundTransparency = 1
         Title.Text = "STEAL PROGRESS"
-        Title.TextColor3 = Color3.fromRGB(220, 220, 220)
+        Title.TextColor3 = Color3.fromRGB(200, 200, 220)
         Title.Font = Enum.Font.GothamBlack
         Title.TextSize = 11
         
         local BarBG = Instance.new("Frame", Main)
         BarBG.Size = UDim2.new(1, -20, 0, 8)
         BarBG.Position = UDim2.new(0, 10, 0, 28)
-        BarBG.BackgroundColor3 = Color3.fromRGB(30, 15, 15)
+        BarBG.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
         Instance.new("UICorner", BarBG).CornerRadius = UDim.new(1, 0)
         
         local BarFill = Instance.new("Frame", BarBG)
         BarFill.Size = UDim2.new(0, 0, 1, 0)
-        BarFill.BackgroundColor3 = Color3.fromRGB(220, 30, 30)
+        BarFill.BackgroundColor3 = Color3.fromRGB(130, 130, 220)
         Instance.new("UICorner", BarFill).CornerRadius = UDim.new(1, 0)
         
         local RadLabel = Instance.new("TextLabel", Main)
@@ -328,7 +337,7 @@ local function rayfield_interface()
         RadLabel.Position = UDim2.new(0, 10, 0, 42)
         RadLabel.BackgroundTransparency = 1
         RadLabel.Text = "RADIUS"
-        RadLabel.TextColor3 = Color3.fromRGB(100, 100, 100)
+        RadLabel.TextColor3 = Color3.fromRGB(100, 100, 130)
         RadLabel.Font = Enum.Font.GothamBold
         RadLabel.TextSize = 10
         RadLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -336,7 +345,7 @@ local function rayfield_interface()
         local RadBox = Instance.new("TextBox", Main)
         RadBox.Size = UDim2.new(0, 40, 0, 16)
         RadBox.Position = UDim2.new(0, 60, 0, 44)
-        RadBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        RadBox.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
         RadBox.Text = tostring(CONFIG.STEAL_RADIUS)
         RadBox.TextColor3 = Color3.new(1,1,1)
         RadBox.Font = Enum.Font.GothamBold
@@ -371,7 +380,7 @@ local function rayfield_interface()
     end)
     
     -- ==============================================================================
-    -- EXACT "SILENTHUB FAST GRAB V2" LOGIC INTEGRATION
+    -- GRAB LOGIC
     -- ==============================================================================
     local function getPos(prompt)
         local p = prompt.Parent
@@ -431,15 +440,13 @@ local function rayfield_interface()
                     if nearest then
                         task.wait(0.07)
                         firePrompt(nearest)
-                        
-                        -- Animate HUD smoothly to 100% just like SilentHub's indicateGrab
                         IsStealing = true
                         task.wait(0.15)
                         IsStealing = false
                     end
                 end
             end
-            task.wait(0.1) -- Decreased from 0.3s to 0.1s for drastically better pickup consistency
+            task.wait(0.1)
         end
     end)
     
@@ -484,7 +491,6 @@ local function rayfield_interface()
         humanoid.PlatformStand = true
         local startCFrame = rootPart.CFrame
         local targetCFrame = CFrame.new(targetPos + Vector3.new(0, 1, 0))
-      
         for i = 1, dashFrames do
             if not rootPart then break end
             local alpha = i / dashFrames
@@ -493,13 +499,11 @@ local function rayfield_interface()
             rootPart.AssemblyAngularVelocity = Vector3.zero
             RunService.RenderStepped:Wait()
         end
-      
         if rootPart then
             rootPart.CFrame = targetCFrame
             task.wait(0.02)
             rootPart.Anchored = false
         end
-      
         humanoid.PlatformStand = false
         humanoid:ChangeState(Enum.HumanoidStateType.Running)
         if rootPart then rootPart.AssemblyLinearVelocity = Vector3.zero end
@@ -509,7 +513,6 @@ local function rayfield_interface()
         if isProcessingHit or not (CONFIG.AUTO_SENT_TP_ON_HIT or CONFIG.AUTO_ACCEPTED_TP_ON_HIT) then return end
         isProcessingHit = true
         refreshChar()
-      
         local s1, s2
         if CONFIG.AUTO_SENT_TP_ON_HIT then s1 = SENT_S1 s2 = SENT_S2
         elseif CONFIG.AUTO_ACCEPTED_TP_ON_HIT then s1 = ACC_S1 s2 = ACC_S2 end
@@ -593,13 +596,13 @@ local function rayfield_interface()
         end
     end)
     
-    local VELOCITY_SPEED_OUT = 58 -- Default to bad internet speed
+    local VELOCITY_SPEED_OUT = 58
     local VELOCITY_SPEED_BACK = 28
     local CurrentInternetMode = "Bad Internet"
     local InternetBtns = {}
 
     -- ==============================================================================
-    -- TOP BAR: UNMOVABLE SPEED CONTROLLER GUI
+    -- TOP BAR: SPEED CONTROLLER (CLEAN THEME)
     -- ==============================================================================
     local SpeedControllerGui = Instance.new("ScreenGui")
     SpeedControllerGui.Name = "AutoDuelSpeedControl"
@@ -608,21 +611,21 @@ local function rayfield_interface()
 
     local SCF = Instance.new("Frame", SpeedControllerGui)
     SCF.Size = UDim2.new(0, 320, 0, 50)
-    SCF.Position = UDim2.new(0.5, -160, 0, 5) -- Unmovable at the top center
-    SCF.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    SCF.Position = UDim2.new(0.5, -160, 0, 5)
+    SCF.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
     SCF.BackgroundTransparency = 0.1
     SCF.BorderSizePixel = 0
     Instance.new("UICorner", SCF).CornerRadius = UDim.new(0, 6)
     local SCStroke = Instance.new("UIStroke", SCF)
-    SCStroke.Color = Color3.fromRGB(150, 0, 0)
+    SCStroke.Color = Color3.fromRGB(70, 70, 95)
     SCStroke.Thickness = 1.5
 
     local SCTitle = Instance.new("TextLabel", SCF)
     SCTitle.Size = UDim2.new(1, 0, 0, 18)
     SCTitle.Position = UDim2.new(0, 0, 0, 4)
     SCTitle.BackgroundTransparency = 1
-    SCTitle.Text = "Auto Duels Speed Controll ("..CurrentInternetMode..": 58/28)"
-    SCTitle.TextColor3 = Color3.new(1, 1, 1)
+    SCTitle.Text = "Auto Duels Speed Control ("..CurrentInternetMode..": 58/28)"
+    SCTitle.TextColor3 = Color3.fromRGB(200, 200, 220)
     SCTitle.Font = Enum.Font.GothamBold
     SCTitle.TextSize = 12
 
@@ -645,16 +648,14 @@ local function rayfield_interface()
         btn.Font = Enum.Font.GothamBold
         btn.TextSize = 11
         Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
-        
         local btnStroke = Instance.new("UIStroke", btn)
         btnStroke.Color = Color3.new(1,1,1)
         btnStroke.Thickness = isDefault and 1.5 or 0
-        
         local function activate()
             VELOCITY_SPEED_OUT = outSpd
             VELOCITY_SPEED_BACK = backSpd
             CurrentInternetMode = text
-            SCTitle.Text = "Auto Duels Speed Controll ("..text..": "..outSpd.."/"..backSpd..")"
+            SCTitle.Text = "Auto Duels Speed Control ("..text..": "..outSpd.."/"..backSpd..")"
             for _, b in ipairs(BtnContainer:GetChildren()) do
                 if b:IsA("TextButton") then
                     local s = b:FindFirstChild("UIStroke")
@@ -662,15 +663,14 @@ local function rayfield_interface()
                 end
             end
         end
-        
         btn.MouseButton1Click:Connect(activate)
         InternetBtns[text] = activate
         return btn
     end
 
-    makeSpeedBtn("Bad Internet", Color3.fromRGB(200, 40, 40), 58, 28, true)
-    makeSpeedBtn("Mid Internet", Color3.fromRGB(200, 180, 40), 59.7, 29.7, false)
-    makeSpeedBtn("Good Internet", Color3.fromRGB(40, 200, 40), 60.7, 30.7, false)
+    makeSpeedBtn("Bad Internet", Color3.fromRGB(60, 60, 80), 58, 28, true)
+    makeSpeedBtn("Mid Internet", Color3.fromRGB(80, 80, 50), 59.7, 29.7, false)
+    makeSpeedBtn("Good Internet", Color3.fromRGB(40, 80, 60), 60.7, 30.7, false)
     
     local rightWaypoints = {
         Vector3.new(-473.04, -6.99, 29.71),
@@ -687,7 +687,6 @@ local function rayfield_interface()
     
     local patrolMode = "none"
     local currentWaypoint = 1
-    
     local waitingForCountdownLeft = false
     local waitingForCountdownRight = false
     local AUTO_START_DELAY = 0.7
@@ -698,7 +697,6 @@ local function rayfield_interface()
         if num and num >= 1 and num <= 5 then return true, num end
         return false
     end
-    
     local function isTimerInCountdown(label)
         if not label then return false end
         local ok, num = isCountdownNumber(label.Text)
@@ -713,7 +711,6 @@ local function rayfield_interface()
         patrolMode = mode
         currentWaypoint = 1
     end
-    
     local function stopMovement()
         patrolMode = "none"
         currentWaypoint = 1
@@ -738,7 +735,6 @@ local function rayfield_interface()
             if patrolMode == "right" then stopMovement() end 
         end
     end
-    
     local function toggleAutoLeft(state)
         if state then 
             CONFIG.AUTO_LEFT = true; CONFIG.AUTO_RIGHT = false
@@ -752,14 +748,12 @@ local function rayfield_interface()
             if patrolMode == "left" then stopMovement() end 
         end
     end
-    
     local function toggleAutoDuel(state)
         CONFIG.AUTO_DUEL = state
         if CONFIG.AUTO_DUEL then
             local root = getHRP(); if not root then return end
             duelIsMoving = true
             duelPathIndex = 1
-          
             if (root.Position - Vector3.new(-475,-7,96)).Magnitude > (root.Position - Vector3.new(-474,-7,23)).Magnitude then
                 duelPath = {
                     {position=Vector3.new(-475,-7,96),speed=VELOCITY_SPEED_OUT},
@@ -786,50 +780,38 @@ local function rayfield_interface()
         end
     end
     
-    -- ==============================================================================
-    -- SMOOTH GRAB SLOWDOWN SYSTEM
-    -- ==============================================================================
     local grabSlowdownEndTime = 0
-    local SLOWDOWN_DURATION = 0.075 -- EXACTLY HALF OF 0.15s
-    local SLOWDOWN_MULTIPLIER = 0.4 -- Multiplies speed by 0.4 while touching base
+    local SLOWDOWN_DURATION = 0.075
+    local SLOWDOWN_MULTIPLIER = 0.4
     
     RunService.Stepped:Connect(function()
         if isDashing then return end
         if CONFIG.UP_DOWN_FLOAT or CONFIG.FLOAT_FOLLOW or CONFIG.FLOAT then return end
-       
         local hrp = getHRP()
         local hum = getHumanoid()
         if not hrp or not hum then return end
-      
-        -- AUTO DUEL LOGIC
         if CONFIG.AUTO_DUEL and duelIsMoving then
             local wp = duelPath[duelPathIndex]
             if wp then
                 local flatTarget = Vector3.new(wp.position.X, hrp.Position.Y, wp.position.Z)
                 local dir = flatTarget - hrp.Position
                 local dist = dir.Magnitude
-                
                 if dist < 5 then
                     if duelPathIndex == 4 then
-                        -- Waypoint 4 is the exact grab point for Duels. Trigger smooth slowdown.
                         grabSlowdownEndTime = tick() + SLOWDOWN_DURATION
                     end
-                  
                     if duelPathIndex == #duelPath then
                         duelPathIndex = 1
                         return
                     end
-                  
                     duelPathIndex = duelPathIndex + 1
                 else
                     local flatDir = dir.Unit
                     hum:Move(flatDir)
-                    
                     local currentSpeed = wp.speed
                     if tick() < grabSlowdownEndTime then
                         currentSpeed = currentSpeed * SLOWDOWN_MULTIPLIER
                     end
-                    
                     if canFastMove(hrp, hum, flatDir) then
                         hrp.AssemblyLinearVelocity = Vector3.new(flatDir.X * currentSpeed, hrp.AssemblyLinearVelocity.Y, flatDir.Z * currentSpeed)
                     end
@@ -839,25 +821,19 @@ local function rayfield_interface()
             end
             return
         end
-      
-        -- AUTO LEFT / RIGHT LOGIC
         if patrolMode ~= "none" then
             local waypoints = (patrolMode == "right") and rightWaypoints or leftWaypoints
             local targetPos = waypoints[currentWaypoint]
             local currentPos = hrp.Position
-    
             local targetXZ = Vector3.new(targetPos.X, 0, targetPos.Z)
             local currentXZ = Vector3.new(currentPos.X, 0, currentPos.Z)
             local distanceXZ = (targetXZ - currentXZ).Magnitude
-    
             if distanceXZ > 3 then
                 local moveDirection = (targetXZ - currentXZ).Unit
                 local currentSpeed = (currentWaypoint >= 3) and VELOCITY_SPEED_BACK or VELOCITY_SPEED_OUT
-                
                 if tick() < grabSlowdownEndTime then
                     currentSpeed = currentSpeed * SLOWDOWN_MULTIPLIER
                 end
-    
                 hum:Move(moveDirection)
                 if canFastMove(hrp, hum, moveDirection) then
                     hrp.AssemblyLinearVelocity = Vector3.new(
@@ -868,10 +844,8 @@ local function rayfield_interface()
                 end
             else
                 if currentWaypoint == 2 then
-                    -- Waypoint 2 is the exact grab point for Left/Right. Trigger smooth slowdown.
                     grabSlowdownEndTime = tick() + SLOWDOWN_DURATION
                 end
-                
                 if currentWaypoint == #waypoints then
                     stopMovement()
                     if CONFIG.AUTO_RIGHT and AutoRightObj then AutoRightObj.Set(false) end
@@ -882,8 +856,6 @@ local function rayfield_interface()
             end
             return
         end
-      
-        -- Normal Speed Engine
         if SpeedMod and SpeedMod.Enabled then
             local md = hum.MoveDirection
             if md.Magnitude > 0.1 then
@@ -1132,9 +1104,6 @@ local function rayfield_interface()
         if hum then hum:ChangeState(Enum.HumanoidStateType.GettingUp) end
     end
 
-    -- ==============================================================================
-    -- UP AND DOWN FLOAT (NEW FEATURE)
-    -- ==============================================================================
     local upDownTargetOffset = 10.5
     local upDownNextSwitch = 0
     local upDownSpeed = 20
@@ -1145,42 +1114,33 @@ local function rayfield_interface()
         startFL_AntiRag()
         startFL_AntiKb()
         if upDownFloatConn then upDownFloatConn:Disconnect() end
-        
         upDownFloatConn = RunService.Heartbeat:Connect(function()
             if not CONFIG.UP_DOWN_FLOAT then return end
             local hrp = getHRP()
             local hum = getHumanoid()
             if not hrp or not hum then return end
-            
             hum:ChangeState(Enum.HumanoidStateType.Freefall)
-            
             if tick() >= upDownNextSwitch then
                 if upDownTargetOffset > 8 then
-                    upDownTargetOffset = math.random(60, 75) / 10 -- Goes to 6.0 - 7.5
+                    upDownTargetOffset = math.random(60, 75) / 10
                 else
-                    upDownTargetOffset = math.random(90, 105) / 10 -- Goes to 9.0 - 10.5
+                    upDownTargetOffset = math.random(90, 105) / 10
                 end
                 upDownNextSwitch = tick() + (math.random(8, 15) / 10)
                 upDownSpeed = math.random(15, 25)
             end
-            
             local floorY = hrp.Position.Y - upDownTargetOffset
             local params = RaycastParams.new()
             params.FilterDescendantsInstances = {LocalPlayer.Character}
             params.FilterType = Enum.RaycastFilterType.Exclude
             local ray = workspace:Raycast(hrp.Position, Vector3.new(0, -50, 0), params)
-            if ray then 
-                floorY = ray.Position.Y 
-            end
-            
+            if ray then floorY = ray.Position.Y end
             local targetY = floorY + upDownTargetOffset
             local yDiff = targetY - hrp.Position.Y
             local yVel = math.clamp(yDiff * upDownSpeed, -30, 30)
-            
             hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, yVel, hrp.AssemblyLinearVelocity.Z)
         end)
     end
-
     local function stopUpDownFloat()
         if not CONFIG.UP_DOWN_FLOAT then return end
         CONFIG.UP_DOWN_FLOAT = false
@@ -1209,62 +1169,36 @@ local function rayfield_interface()
         end
     end)
     
-    local PrimaryRed = Color3.fromRGB(220, 30, 30)
-    local BrightRed = Color3.fromRGB(255, 60, 50)
-    local DarkRed = Color3.fromRGB(100, 10, 10)
-    local AccentOrange = Color3.fromRGB(255, 100, 0)
-    local DarkBackground = Color3.fromRGB(15, 15, 15)
-    local LighterBackground = Color3.fromRGB(30, 30, 30)
-    local RimRed = Color3.fromRGB(150, 0, 0)
+    -- ==============================================================================
+    -- CLEAN THEME COLOR PALETTE
+    -- ==============================================================================
+    local CleanWhite     = Color3.fromRGB(235, 235, 245)
+    local CleanGray      = Color3.fromRGB(160, 160, 180)
+    local AccentBlue     = Color3.fromRGB(110, 130, 220)
+    local DarkBackground = Color3.fromRGB(14, 14, 20)
+    local CardBackground = Color3.fromRGB(22, 22, 32)
+    local BorderColor    = Color3.fromRGB(50, 50, 72)
+    local ActiveColor    = Color3.fromRGB(90, 110, 200)
+    local SubtleGray     = Color3.fromRGB(38, 38, 55)
+
     local Library = {}
     local function ToggleAnimation(button, circle, state)
         if not button or not circle then return end
         if state then
-            TweenService:Create(circle, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-            TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {BackgroundColor3 = PrimaryRed}):Play()
+            TweenService:Create(circle, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = CleanWhite}):Play()
+            TweenService:Create(button, TweenInfo.new(0.25), {BackgroundColor3 = ActiveColor}):Play()
         else
-            TweenService:Create(circle, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(150, 150, 150)}):Play()
-            TweenService:Create(button, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.In), {BackgroundColor3 = LighterBackground}):Play()
+            TweenService:Create(circle, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = CleanGray}):Play()
+            TweenService:Create(button, TweenInfo.new(0.25), {BackgroundColor3 = SubtleGray}):Play()
         end
     end
-    local function StartEmberEffect(container, windowObj)
-        task.spawn(function()
-            while windowObj.EmbersEnabled do
-                task.wait(math.random(10, 20) / 100)
-                local particle = Instance.new("Frame")
-                local size = math.random(2, 4)
-                particle.Size = UDim2.new(0, size, 0, size)
-                particle.Position = UDim2.new(math.random(-10, 110)/100, 0, 1.1, 0)
-                local colorPick = math.random(1, 3)
-                if colorPick == 1 then particle.BackgroundColor3 = PrimaryRed
-                elseif colorPick == 2 then particle.BackgroundColor3 = BrightRed
-                else particle.BackgroundColor3 = AccentOrange end
-                particle.BackgroundTransparency = math.random(20, 60) / 100
-                particle.BorderSizePixel = 0; particle.ZIndex = 1; particle.Parent = container
-                Instance.new("UICorner", particle).CornerRadius = UDim.new(1, 0)
-                task.spawn(function()
-                    local riseSpeed = math.random(3, 7) / 1000
-                    local sway = math.random(-3, 3) / 100
-                    local swaySpeed = math.random(2, 6) / 1000
-                    while particle and particle.Parent and windowObj.EmbersEnabled do
-                        local currentPos = particle.Position
-                        local time = tick()
-                        local swayOffset = math.sin(time * swaySpeed) * sway
-                        particle.Position = UDim2.new(currentPos.X.Scale + swayOffset, currentPos.X.Offset, currentPos.Y.Scale - riseSpeed, currentPos.Y.Offset)
-                        if particle.Position.Y.Scale < -0.1 then particle:Destroy() break end
-                        task.wait(0.05)
-                    end
-                    if particle then particle:Destroy() end
-                end)
-            end
-        end)
-    end
+
     local AllUIObjects = {}
+
     function Library:CreateWindow(options)
         options = options or {}
-        local windowTitle = options.Title or "NEMESIS HUB DUELS"
-     
-        local Window = { EmbersEnabled = true }
+        local windowTitle = options.Title or "34S HUB DUEL"
+        local Window = {}
      
         local ScreenGui = Instance.new("ScreenGui")
         ScreenGui.Name = "LibraryGUI"
@@ -1272,22 +1206,24 @@ local function rayfield_interface()
         ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
         if gethui then ScreenGui.Parent = gethui() elseif syn and syn.protect_gui then syn.protect_gui(ScreenGui); ScreenGui.Parent = CoreGui else ScreenGui.Parent = CoreGui end
         Window.ScreenGui = ScreenGui
+
+        -- Pinned widget
         local PinnedWidget = Instance.new("Frame", ScreenGui)
         PinnedWidget.Size = UDim2.new(0, 130, 0, 24)
         PinnedWidget.Position = UDim2.new(1, -140, 0.3, 0)
         PinnedWidget.BackgroundColor3 = DarkBackground
-        PinnedWidget.BackgroundTransparency = 0.2
+        PinnedWidget.BackgroundTransparency = 0.1
         PinnedWidget.ZIndex = 100
         PinnedWidget.Visible = false
-        Instance.new("UICorner", PinnedWidget).CornerRadius = UDim.new(0, 6)
+        Instance.new("UICorner", PinnedWidget).CornerRadius = UDim.new(0, 8)
         local PinnedStroke = Instance.new("UIStroke", PinnedWidget)
-        PinnedStroke.Color = PrimaryRed
-        PinnedStroke.Thickness = 1.5
+        PinnedStroke.Color = BorderColor
+        PinnedStroke.Thickness = 1
         local PinnedHeader = Instance.new("TextLabel", PinnedWidget)
         PinnedHeader.Size = UDim2.new(1, 0, 0, 20)
         PinnedHeader.BackgroundTransparency = 1
         PinnedHeader.Text = "📌 Quick HUD"
-        PinnedHeader.TextColor3 = BrightRed
+        PinnedHeader.TextColor3 = AccentBlue
         PinnedHeader.Font = Enum.Font.GothamBold
         PinnedHeader.TextSize = 11
         local PinnedContainer = Instance.new("Frame", PinnedWidget)
@@ -1330,93 +1266,126 @@ local function rayfield_interface()
         MainFrame.Size = UDim2.new(0, windowWidth, 0, windowHeight)
         MainFrame.Position = UDim2.new(0.5, -windowWidth/2, 0.5, -windowHeight/2)
         MainFrame.BackgroundColor3 = DarkBackground
-        MainFrame.BackgroundTransparency = 0.05
+        MainFrame.BackgroundTransparency = 0
         MainFrame.BorderSizePixel = 0
         MainFrame.ClipsDescendants = true
         MainFrame.Parent = ScreenGui
         Window.MainFrame = MainFrame
-        Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+        Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
      
         local MainStroke = Instance.new("UIStroke", MainFrame)
-        MainStroke.Color = DarkRed
-        MainStroke.Thickness = 2
-     
-        local EmberContainer = Instance.new("Frame", MainFrame)
-        EmberContainer.Size = UDim2.new(1, 0, 1, 0)
-        EmberContainer.BackgroundTransparency = 1
-        EmberContainer.ZIndex = 1
-        StartEmberEffect(EmberContainer, Window)
-        local TopFireBar = Instance.new("Frame", MainFrame)
-        TopFireBar.Size = UDim2.new(1, 0, 0, 6)
-        TopFireBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        TopFireBar.BorderSizePixel = 0
-        TopFireBar.ZIndex = 10
-        local FireGradient = Instance.new("UIGradient", TopFireBar)
-        FireGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, DarkRed), ColorSequenceKeypoint.new(0.25, PrimaryRed), ColorSequenceKeypoint.new(0.5, AccentOrange), ColorSequenceKeypoint.new(0.75, PrimaryRed), ColorSequenceKeypoint.new(1, DarkRed)}
-        task.spawn(function()
-            local t = 0
-            while TopFireBar and TopFireBar.Parent do
-                t = (t + 2) % 360; FireGradient.Rotation = t; task.wait(0.04)
-            end
-        end)
-     
+        MainStroke.Color = BorderColor
+        MainStroke.Thickness = 1.5
+
+        -- Clean top accent bar (subtle gradient, no fire)
+        local TopBar = Instance.new("Frame", MainFrame)
+        TopBar.Size = UDim2.new(1, 0, 0, 4)
+        TopBar.BackgroundColor3 = Color3.new(1,1,1)
+        TopBar.BorderSizePixel = 0
+        TopBar.ZIndex = 10
+        local TopGrad = Instance.new("UIGradient", TopBar)
+        TopGrad.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 60, 100)),
+            ColorSequenceKeypoint.new(0.5, AccentBlue),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 60, 100))
+        }
+
+        -- Header section with subtle background
+        local HeaderBG = Instance.new("Frame", MainFrame)
+        HeaderBG.Size = UDim2.new(1, 0, 0, 60)
+        HeaderBG.Position = UDim2.new(0, 0, 0, 4)
+        HeaderBG.BackgroundColor3 = CardBackground
+        HeaderBG.BorderSizePixel = 0
+        HeaderBG.ZIndex = 2
+
         local DragArea = Instance.new("Frame", MainFrame)
-        DragArea.Size = UDim2.new(1, -30, 0, 50)
+        DragArea.Size = UDim2.new(1, -30, 0, 64)
         DragArea.BackgroundTransparency = 1
         DragArea.ZIndex = 15
      
-        local Title = Instance.new("TextLabel", MainFrame)
-        Title.Size = UDim2.new(1, -60, 0, 30); Title.Position = UDim2.new(0, 30, 0, 12)
-        Title.BackgroundTransparency = 1; Title.Text = windowTitle; Title.TextColor3 = Color3.new(1,1,1)
-        Title.TextSize = IS_MOBILE and 20 or 24; Title.Font = Enum.Font.GothamBlack; Title.ZIndex = 2
-        Title.TextYAlignment = Enum.TextYAlignment.Center
-        local DiscordBtn = Instance.new("TextButton", MainFrame)
-        DiscordBtn.Size = UDim2.new(1, 0, 0, 16)
-        DiscordBtn.Position = UDim2.new(0, 0, 0, 42)
-        DiscordBtn.BackgroundTransparency = 1
-        DiscordBtn.Text = "discord.gg/VPx5wWkGM9"
-        DiscordBtn.TextColor3 = BrightRed
-        DiscordBtn.TextSize = 12
-        DiscordBtn.Font = Enum.Font.GothamBold
-        DiscordBtn.ZIndex = 2
-        DiscordBtn.MouseButton1Click:Connect(function()
-            setclipboard("https://discord.gg/VPx5wWkGM9")
-        end)
-        DiscordBtn.MouseEnter:Connect(function() DiscordBtn.TextColor3 = Color3.fromRGB(255, 200, 100) end)
-        DiscordBtn.MouseLeave:Connect(function() DiscordBtn.TextColor3 = BrightRed end)
-     
+        -- Title: "34S" accented + " HUB DUEL" normal
+        local TitleAccent = Instance.new("TextLabel", MainFrame)
+        TitleAccent.Size = UDim2.new(0, 50, 0, 30)
+        TitleAccent.Position = UDim2.new(0, 16, 0, 14)
+        TitleAccent.BackgroundTransparency = 1
+        TitleAccent.Text = "34S"
+        TitleAccent.TextColor3 = AccentBlue
+        TitleAccent.TextSize = IS_MOBILE and 20 or 22
+        TitleAccent.Font = Enum.Font.GothamBlack
+        TitleAccent.ZIndex = 3
+        TitleAccent.TextXAlignment = Enum.TextXAlignment.Left
+
+        local TitleRest = Instance.new("TextLabel", MainFrame)
+        TitleRest.Size = UDim2.new(0, 160, 0, 30)
+        TitleRest.Position = UDim2.new(0, 60, 0, 14)
+        TitleRest.BackgroundTransparency = 1
+        TitleRest.Text = " HUB DUEL"
+        TitleRest.TextColor3 = CleanWhite
+        TitleRest.TextSize = IS_MOBILE and 20 or 22
+        TitleRest.Font = Enum.Font.GothamBlack
+        TitleRest.ZIndex = 3
+        TitleRest.TextXAlignment = Enum.TextXAlignment.Left
+
+        local SubLabel = Instance.new("TextLabel", MainFrame)
+        SubLabel.Size = UDim2.new(1, -30, 0, 16)
+        SubLabel.Position = UDim2.new(0, 16, 0, 42)
+        SubLabel.BackgroundTransparency = 1
+        SubLabel.Text = "Clean Edition  ·  v2.0"
+        SubLabel.TextColor3 = CleanGray
+        SubLabel.TextSize = 10
+        SubLabel.Font = Enum.Font.Gotham
+        SubLabel.ZIndex = 3
+        SubLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+        local SepLine = Instance.new("Frame", MainFrame)
+        SepLine.Size = UDim2.new(1, -32, 0, 1)
+        SepLine.Position = UDim2.new(0, 16, 0, 63)
+        SepLine.BackgroundColor3 = BorderColor
+        SepLine.BorderSizePixel = 0
+        SepLine.ZIndex = 3
+
         local MinimizeBtn = Instance.new("TextButton", MainFrame)
-        MinimizeBtn.Size = UDim2.new(0, 25, 0, 25); MinimizeBtn.Position = UDim2.new(1, -30, 0, 10)
-        MinimizeBtn.BackgroundTransparency = 1; MinimizeBtn.Text = "−"; MinimizeBtn.TextColor3 = Color3.fromRGB(200,200,200)
-        MinimizeBtn.TextSize = 24; MinimizeBtn.Font = Enum.Font.GothamBold; MinimizeBtn.ZIndex = 20
-        MinimizeBtn.MouseEnter:Connect(function() MinimizeBtn.TextColor3 = PrimaryRed end)
-        MinimizeBtn.MouseLeave:Connect(function() MinimizeBtn.TextColor3 = Color3.fromRGB(200,200,200) end)
+        MinimizeBtn.Size = UDim2.new(0, 28, 0, 28)
+        MinimizeBtn.Position = UDim2.new(1, -36, 0, 16)
+        MinimizeBtn.BackgroundColor3 = SubtleGray
+        MinimizeBtn.Text = "−"
+        MinimizeBtn.TextColor3 = CleanGray
+        MinimizeBtn.TextSize = 20
+        MinimizeBtn.Font = Enum.Font.GothamBold
+        MinimizeBtn.ZIndex = 20
+        Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0, 6)
+        MinimizeBtn.MouseEnter:Connect(function() MinimizeBtn.TextColor3 = AccentBlue end)
+        MinimizeBtn.MouseLeave:Connect(function() MinimizeBtn.TextColor3 = CleanGray end)
+
         local ResizeHandle = Instance.new("TextButton", MainFrame)
-        ResizeHandle.Size = UDim2.new(0, 25, 0, 25)
+        ResizeHandle.Size = UDim2.new(0, 20, 0, 20)
         ResizeHandle.AnchorPoint = Vector2.new(1, 1)
         ResizeHandle.Position = UDim2.new(1, 0, 1, 0)
         ResizeHandle.BackgroundTransparency = 1
         ResizeHandle.Text = "◢"
-        ResizeHandle.TextColor3 = DarkRed
-        ResizeHandle.TextSize = 16
+        ResizeHandle.TextColor3 = BorderColor
+        ResizeHandle.TextSize = 14
         ResizeHandle.ZIndex = 20
-        ResizeHandle.MouseEnter:Connect(function() ResizeHandle.TextColor3 = PrimaryRed end)
-        ResizeHandle.MouseLeave:Connect(function() ResizeHandle.TextColor3 = DarkRed end)
+        ResizeHandle.MouseEnter:Connect(function() ResizeHandle.TextColor3 = AccentBlue end)
+        ResizeHandle.MouseLeave:Connect(function() ResizeHandle.TextColor3 = BorderColor end)
+
+        -- Minimized logo (clean version)
         local MinimizedGui = Instance.new("TextButton", ScreenGui)
-        MinimizedGui.Name = "NemesisLogo"
-        MinimizedGui.Size = UDim2.new(0, 50, 0, 50)
+        MinimizedGui.Name = "HubLogo"
+        MinimizedGui.Size = UDim2.new(0, 52, 0, 52)
         MinimizedGui.Position = UDim2.new(0, 20, 0.4, 0)
-        MinimizedGui.BackgroundColor3 = Color3.new(0, 0, 0)
-        MinimizedGui.Text = "N"
-        MinimizedGui.TextColor3 = PrimaryRed
-        MinimizedGui.TextSize = 34
+        MinimizedGui.BackgroundColor3 = DarkBackground
+        MinimizedGui.Text = "34S"
+        MinimizedGui.TextColor3 = AccentBlue
+        MinimizedGui.TextSize = 16
         MinimizedGui.Font = Enum.Font.GothamBlack
         MinimizedGui.Visible = false
-        MinimizedGui.AutoButtonColor = true
+        MinimizedGui.AutoButtonColor = false
+        Instance.new("UICorner", MinimizedGui).CornerRadius = UDim.new(0, 8)
         local LogoStroke = Instance.new("UIStroke", MinimizedGui)
-        LogoStroke.Color = PrimaryRed
-        LogoStroke.Thickness = 2
-        Instance.new("UICorner", MinimizedGui).CornerRadius = UDim.new(0, 4)
+        LogoStroke.Color = BorderColor
+        LogoStroke.Thickness = 1.5
+
         local logoDragging, logoDragInput, logoDragStart, logoStartPos
         MinimizedGui.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -1433,6 +1402,7 @@ local function rayfield_interface()
                 MinimizedGui.Position = UDim2.new(logoStartPos.X.Scale, logoStartPos.X.Offset + delta.X, logoStartPos.Y.Scale, logoStartPos.Y.Offset + delta.Y)
             end
         end)
+
         local minimized = false
         local function toggleMinimize()
             minimized = not minimized
@@ -1441,23 +1411,27 @@ local function rayfield_interface()
         end
         MinimizeBtn.MouseButton1Click:Connect(toggleMinimize)
         MinimizedGui.MouseButton1Click:Connect(toggleMinimize)
+
         local ContentScroll = Instance.new("ScrollingFrame", MainFrame)
-        ContentScroll.Size = UDim2.new(1, -24, 1, -76)
-        ContentScroll.Position = UDim2.new(0, 12, 0, 64)
-        ContentScroll.BackgroundTransparency = 1; ContentScroll.BorderSizePixel = 0
-        ContentScroll.ScrollBarThickness = 3; ContentScroll.ScrollBarImageColor3 = PrimaryRed
+        ContentScroll.Size = UDim2.new(1, -24, 1, -80)
+        ContentScroll.Position = UDim2.new(0, 12, 0, 72)
+        ContentScroll.BackgroundTransparency = 1
+        ContentScroll.BorderSizePixel = 0
+        ContentScroll.ScrollBarThickness = 3
+        ContentScroll.ScrollBarImageColor3 = AccentBlue
         ContentScroll.ZIndex = 2
      
         local LeftCol = Instance.new("Frame", ContentScroll)
         LeftCol.Size = UDim2.new(0.5, -5, 1, 0); LeftCol.BackgroundTransparency = 1
         local LeftList = Instance.new("UIListLayout", LeftCol)
-        LeftList.Padding = UDim.new(0, 8); LeftList.SortOrder = Enum.SortOrder.LayoutOrder
+        LeftList.Padding = UDim.new(0, 6); LeftList.SortOrder = Enum.SortOrder.LayoutOrder
      
         local RightCol = Instance.new("Frame", ContentScroll)
         RightCol.Size = UDim2.new(0.5, -5, 1, 0); RightCol.Position = UDim2.new(0.5, 5, 0, 0)
         RightCol.BackgroundTransparency = 1
         local RightList = Instance.new("UIListLayout", RightCol)
-        RightList.Padding = UDim.new(0, 8); RightList.SortOrder = Enum.SortOrder.LayoutOrder
+        RightList.Padding = UDim.new(0, 6); RightList.SortOrder = Enum.SortOrder.LayoutOrder
+
         local CenterCol = Instance.new("Frame", ContentScroll)
         CenterCol.Size = UDim2.new(1, 0, 0, 50)
         CenterCol.BackgroundTransparency = 1
@@ -1492,7 +1466,6 @@ local function rayfield_interface()
         DragArea.InputChanged:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
         end)
-      
         UserInputService.InputChanged:Connect(function(input)
             if isResizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                 local delta = input.Position - resStartPos
@@ -1506,6 +1479,9 @@ local function rayfield_interface()
             end
         end)
         
+        -- ==============================================================================
+        -- WIDGET CREATORS (CLEAN THEME)
+        -- ==============================================================================
         function Window:CreateTextBox(opts)
             local text = opts.Text or "Input"
             local default = opts.Default or ""
@@ -1513,47 +1489,38 @@ local function rayfield_interface()
             
             local Container = Instance.new("Frame", parentCol)
             Container.Size = UDim2.new(1, 0, 0, 34)
-            Container.BackgroundColor3 = DarkBackground
-            Container.BackgroundTransparency = 0.2
+            Container.BackgroundColor3 = CardBackground
             Container.BorderSizePixel = 0
-            Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 6)
-            Instance.new("UIStroke", Container).Color = RimRed
+            Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 7)
+            local cs = Instance.new("UIStroke", Container)
+            cs.Color = BorderColor; cs.Thickness = 1
             
             local Label = Instance.new("TextLabel", Container)
             Label.Size = UDim2.new(0.5, -10, 1, 0); Label.Position = UDim2.new(0, 10, 0, 0)
-            Label.BackgroundTransparency = 1; Label.Text = text; Label.TextColor3 = Color3.fromRGB(220, 220, 220)
+            Label.BackgroundTransparency = 1; Label.Text = text
+            Label.TextColor3 = CleanGray
             Label.TextSize = IS_MOBILE and 11 or 12; Label.Font = Enum.Font.GothamBold; Label.TextXAlignment = Enum.TextXAlignment.Left
             
             local Box = Instance.new("TextBox", Container)
             Box.Size = UDim2.new(0.5, -10, 0, 20)
             Box.Position = UDim2.new(0.5, 0, 0.5, -10)
-            Box.BackgroundColor3 = LighterBackground
+            Box.BackgroundColor3 = SubtleGray
             Box.Text = default
-            Box.TextColor3 = Color3.new(1,1,1)
+            Box.TextColor3 = CleanWhite
             Box.Font = Enum.Font.GothamBold
             Box.TextSize = 11
-            Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 4)
+            Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 5)
             
             if opts.LiveUpdate then
                 Box:GetPropertyChangedSignal("Text"):Connect(function()
                     opts.LiveUpdate(Box, Box.Text)
                 end)
             end
-            
             Box.FocusLost:Connect(function()
                 if opts.Callback then opts.Callback(Box.Text) end
             end)
-            
-            if opts.OnFocused then
-                Box.Focused:Connect(function()
-                    opts.OnFocused(Box)
-                end)
-            end
-            if opts.OnFocusLost then
-                Box.FocusLost:Connect(function()
-                    opts.OnFocusLost(Box)
-                end)
-            end
+            if opts.OnFocused then Box.Focused:Connect(function() opts.OnFocused(Box) end) end
+            if opts.OnFocusLost then Box.FocusLost:Connect(function() opts.OnFocusLost(Box) end) end
             
             local obj = { Container = Container, Box = Box }
             table.insert(AllUIObjects, obj)
@@ -1566,30 +1533,32 @@ local function rayfield_interface()
          
             local Container = Instance.new("Frame", parentCol)
             Container.Size = UDim2.new(1, 0, 0, 34)
-            Container.BackgroundColor3 = DarkBackground
-            Container.BackgroundTransparency = 0.2
+            Container.BackgroundColor3 = CardBackground
             Container.BorderSizePixel = 0
-            Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 6)
-            Instance.new("UIStroke", Container).Color = RimRed
+            Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 7)
+            local cs = Instance.new("UIStroke", Container)
+            cs.Color = BorderColor; cs.Thickness = 1
          
             local Label = Instance.new("TextLabel", Container)
-            Label.Size = UDim2.new(1, -75, 1, 0); Label.Position = UDim2.new(0, 10, 0, 0)
-            Label.BackgroundTransparency = 1; Label.Text = text; Label.TextColor3 = Color3.fromRGB(220, 220, 220)
+            Label.Size = UDim2.new(1, -80, 1, 0); Label.Position = UDim2.new(0, 10, 0, 0)
+            Label.BackgroundTransparency = 1; Label.Text = text
+            Label.TextColor3 = CleanWhite
             Label.TextSize = IS_MOBILE and 11 or 12; Label.Font = Enum.Font.GothamBold; Label.TextXAlignment = Enum.TextXAlignment.Left
          
             local ToggleButton = Instance.new("TextButton", Container)
             ToggleButton.Size = UDim2.new(0, 36, 0, 18); ToggleButton.Position = UDim2.new(1, -70, 0.5, -9)
-            ToggleButton.BackgroundColor3 = LighterBackground; ToggleButton.BorderSizePixel = 0; ToggleButton.Text = ""
+            ToggleButton.BackgroundColor3 = SubtleGray; ToggleButton.BorderSizePixel = 0; ToggleButton.Text = ""
             Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(1, 0)
          
             local ToggleCircle = Instance.new("Frame", ToggleButton)
             ToggleCircle.Size = UDim2.new(0, 14, 0, 14); ToggleCircle.Position = UDim2.new(0, 3, 0.5, -7)
-            ToggleCircle.BackgroundColor3 = Color3.fromRGB(150, 150, 150); ToggleCircle.BorderSizePixel = 0
+            ToggleCircle.BackgroundColor3 = CleanGray; ToggleCircle.BorderSizePixel = 0
             Instance.new("UICorner", ToggleCircle).CornerRadius = UDim.new(1, 0)
+
             local PinBtn = Instance.new("TextButton", Container)
             PinBtn.Size = UDim2.new(0, 20, 0, 20); PinBtn.Position = UDim2.new(1, -25, 0.5, -10)
-            PinBtn.BackgroundTransparency = 1; PinBtn.Text = "☆"; PinBtn.TextSize = 16
-            PinBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
+            PinBtn.BackgroundTransparency = 1; PinBtn.Text = "☆"; PinBtn.TextSize = 15
+            PinBtn.TextColor3 = BorderColor
             
             local isEnabled = false
             local isPinned = false
@@ -1602,20 +1571,20 @@ local function rayfield_interface()
             
             local function CreatePinnedUI()
                 local mC = Instance.new("Frame", Window.PinnedContainer)
-                mC.Size = UDim2.new(1, -8, 0, 28); mC.BackgroundColor3 = DarkBackground; mC.BackgroundTransparency = 0.1
-                Instance.new("UICorner", mC).CornerRadius = UDim.new(0, 4)
-                Instance.new("UIStroke", mC).Color = RimRed
+                mC.Size = UDim2.new(1, -8, 0, 28); mC.BackgroundColor3 = CardBackground; mC.BackgroundTransparency = 0.1
+                Instance.new("UICorner", mC).CornerRadius = UDim.new(0, 5)
+                Instance.new("UIStroke", mC).Color = BorderColor
                 local mL = Instance.new("TextLabel", mC)
                 mL.Size = UDim2.new(1, -45, 1, 0); mL.Position = UDim2.new(0, 6, 0, 0)
-                mL.BackgroundTransparency = 1; mL.Text = text; mL.TextColor3 = Color3.new(1,1,1)
+                mL.BackgroundTransparency = 1; mL.Text = text; mL.TextColor3 = CleanWhite
                 mL.TextSize = 10; mL.Font = Enum.Font.GothamBold; mL.TextXAlignment = Enum.TextXAlignment.Left
                 local mT = Instance.new("TextButton", mC)
                 mT.Size = UDim2.new(0, 30, 0, 14); mT.Position = UDim2.new(1, -36, 0.5, -7)
-                mT.BackgroundColor3 = LighterBackground; mT.Text = ""
+                mT.BackgroundColor3 = SubtleGray; mT.Text = ""
                 Instance.new("UICorner", mT).CornerRadius = UDim.new(1, 0)
                 local mCir = Instance.new("Frame", mT)
                 mCir.Size = UDim2.new(0, 10, 0, 10); mCir.Position = UDim2.new(0, 2, 0.5, -5)
-                mCir.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+                mCir.BackgroundColor3 = CleanGray
                 Instance.new("UICorner", mCir).CornerRadius = UDim.new(1, 0)
                 mT.MouseButton1Click:Connect(function()
                     local ns = not isEnabled
@@ -1630,11 +1599,11 @@ local function rayfield_interface()
                 if isPinned == state then return end
                 isPinned = state
                 if isPinned then
-                    PinBtn.Text = "★"; PinBtn.TextColor3 = BrightRed
+                    PinBtn.Text = "★"; PinBtn.TextColor3 = AccentBlue
                     PinnedObj = CreatePinnedUI()
                     SyncUI(isEnabled)
                 else
-                    PinBtn.Text = "☆"; PinBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
+                    PinBtn.Text = "☆"; PinBtn.TextColor3 = BorderColor
                     if PinnedObj then PinnedObj.Container:Destroy(); PinnedObj = nil end
                 end
             end
@@ -1645,9 +1614,7 @@ local function rayfield_interface()
                 SyncUI(ns)
                 if opts.Callback then opts.Callback(ns) end
             end)
-            
             PinBtn.MouseButton1Click:Connect(function() UpdatePin(not isPinned) end)
-            
             if opts.Pinned then UpdatePin(true) end
          
             local obj = {
@@ -1672,26 +1639,28 @@ local function rayfield_interface()
          
             local Container = Instance.new("Frame", parentCol)
             Container.Size = UDim2.new(1, 0, 0, 34)
-            Container.BackgroundColor3 = DarkBackground
-            Container.BackgroundTransparency = 0.2
+            Container.BackgroundColor3 = CardBackground
             Container.BorderSizePixel = 0
-            Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 6)
-            Instance.new("UIStroke", Container).Color = RimRed
+            Instance.new("UICorner", Container).CornerRadius = UDim.new(0, 7)
+            local cs = Instance.new("UIStroke", Container)
+            cs.Color = BorderColor; cs.Thickness = 1
          
             local Btn = Instance.new("TextButton", Container)
             Btn.Size = UDim2.new(1, -35, 1, 0)
             Btn.Position = UDim2.new(0, 10, 0, 0)
             Btn.BackgroundTransparency = 1
-            Btn.Text = text
+            Btn.Text = "▶  " .. text
             Btn.TextXAlignment = Enum.TextXAlignment.Left
-            Btn.TextColor3 = Color3.fromRGB(220, 220, 220)
+            Btn.TextColor3 = CleanWhite
             Btn.TextSize = IS_MOBILE and 11 or 12
             Btn.Font = Enum.Font.GothamBold
+            Btn.MouseEnter:Connect(function() Btn.TextColor3 = AccentBlue end)
+            Btn.MouseLeave:Connect(function() Btn.TextColor3 = CleanWhite end)
             
             local PinBtn = Instance.new("TextButton", Container)
             PinBtn.Size = UDim2.new(0, 20, 0, 20); PinBtn.Position = UDim2.new(1, -25, 0.5, -10)
-            PinBtn.BackgroundTransparency = 1; PinBtn.Text = "☆"; PinBtn.TextSize = 16
-            PinBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
+            PinBtn.BackgroundTransparency = 1; PinBtn.Text = "☆"; PinBtn.TextSize = 15
+            PinBtn.TextColor3 = BorderColor
           
             Btn.MouseButton1Click:Connect(function() if opts.Callback then opts.Callback() end end)
             
@@ -1702,23 +1671,22 @@ local function rayfield_interface()
                 if isPinned == state then return end
                 isPinned = state
                 if isPinned then
-                    PinBtn.Text = "★"; PinBtn.TextColor3 = BrightRed
+                    PinBtn.Text = "★"; PinBtn.TextColor3 = AccentBlue
                     PinnedObj = Instance.new("Frame", Window.PinnedContainer)
-                    PinnedObj.Size = UDim2.new(1, -8, 0, 24); PinnedObj.BackgroundColor3 = DarkBackground
-                    Instance.new("UICorner", PinnedObj).CornerRadius = UDim.new(0, 4)
-                    Instance.new("UIStroke", PinnedObj).Color = RimRed
+                    PinnedObj.Size = UDim2.new(1, -8, 0, 24); PinnedObj.BackgroundColor3 = CardBackground
+                    Instance.new("UICorner", PinnedObj).CornerRadius = UDim.new(0, 5)
+                    Instance.new("UIStroke", PinnedObj).Color = BorderColor
                     local mB = Instance.new("TextButton", PinnedObj)
                     mB.Size = UDim2.new(1, 0, 1, 0); mB.BackgroundTransparency = 1
-                    mB.Text = text; mB.TextColor3 = Color3.new(1,1,1); mB.Font = Enum.Font.GothamBold; mB.TextSize = 10
+                    mB.Text = text; mB.TextColor3 = CleanWhite; mB.Font = Enum.Font.GothamBold; mB.TextSize = 10
                     mB.MouseButton1Click:Connect(function() if opts.Callback then opts.Callback() end end)
                 else
-                    PinBtn.Text = "☆"; PinBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
+                    PinBtn.Text = "☆"; PinBtn.TextColor3 = BorderColor
                     if PinnedObj then PinnedObj:Destroy(); PinnedObj = nil end
                 end
             end
             
             PinBtn.MouseButton1Click:Connect(function() UpdatePin(not isPinned) end)
-            
             if opts.Pinned then UpdatePin(true) end
           
             local obj = { 
@@ -1729,6 +1697,7 @@ local function rayfield_interface()
             table.insert(AllUIObjects, obj)
             return obj
         end
+
         function Window:BalanceUI()
             local count = #AllUIObjects
             local mid = math.floor(count / 2)
@@ -1748,7 +1717,10 @@ local function rayfield_interface()
         return Window
     end
     
-    local UI = Library:CreateWindow({ Title = "NEMESIS HUB DUELS" })
+    -- ==============================================================================
+    -- BUILD UI
+    -- ==============================================================================
+    local UI = Library:CreateWindow({ Title = "34S HUB DUEL" })
     
     local UI_Toggles = {}
     local UI_Buttons = {}
@@ -1770,12 +1742,10 @@ local function rayfield_interface()
         toggleAutoDuel(s)
         if s and not CONFIG.AUTO_STEAL_NEAREST then UI_Toggles.AutoGrab.Set(true) end
     end })
-    
     UI_Toggles.AntiLagBoost = UI:CreateToggle({ Text = "Anti-Lag Boost (FPS)", Pinned = true, Callback = function(s)
         CONFIG.ANTI_LAG_BOOST = s
         if s then startBoost() else stopBoost() end
     end })
-    
     UI_Buttons.DropBrainrots = UI:CreateButton({ Text = "Drop Brainrots", Callback = function()
         local hrp = getHRP()
         if hrp then
@@ -1826,7 +1796,6 @@ local function rayfield_interface()
             stopFloating()
         end
     end })
-    
     UI_Toggles.UpDownFloat = UI:CreateToggle({ Text = "Up/Down Float", Pinned = true, Callback = function(s)
         if s then
             if UI_Toggles.FloatFollow and CONFIG.FLOAT_FOLLOW then UI_Toggles.FloatFollow.Set(false) end
@@ -1836,26 +1805,24 @@ local function rayfield_interface()
             stopUpDownFloat()
         end
     end })
-    
     UI_Toggles.AntiRag = UI:CreateToggle({ Text = "Anti-Ragdoll", Callback = function(s) CONFIG.ANTI_RAGDOLL = s; if s then InitAntiItem() end end })
     UI_Toggles.ESP = UI:CreateToggle({ Text = "ESP Hitboxes", Callback = function(s) CONFIG.ESP_BOXES = s end })
     
     -- ==============================================================================
-    -- CONFIG SAVING AND LOADING SYSTEM
+    -- CONFIG SYSTEM
     -- ==============================================================================
     local CurrentConfigName = "default"
     
     local ConfigDropdown = Instance.new("ScrollingFrame", UI.ScreenGui)
-    ConfigDropdown.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    ConfigDropdown.BackgroundColor3 = CardBackground
     ConfigDropdown.BorderSizePixel = 0
     ConfigDropdown.ZIndex = 1000
     ConfigDropdown.Visible = false
     ConfigDropdown.ScrollBarThickness = 2
-    ConfigDropdown.ScrollBarImageColor3 = Color3.fromRGB(220, 30, 30)
-    Instance.new("UICorner", ConfigDropdown).CornerRadius = UDim.new(0, 4)
+    ConfigDropdown.ScrollBarImageColor3 = AccentBlue
+    Instance.new("UICorner", ConfigDropdown).CornerRadius = UDim.new(0, 5)
     local CDStroke = Instance.new("UIStroke", ConfigDropdown)
-    CDStroke.Color = Color3.fromRGB(150, 0, 0)
-    CDStroke.Thickness = 1
+    CDStroke.Color = BorderColor; CDStroke.Thickness = 1
 
     local DropdownLayout = Instance.new("UIListLayout", ConfigDropdown)
     DropdownLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -1872,47 +1839,41 @@ local function rayfield_interface()
             local row = Instance.new("Frame", ConfigDropdown)
             row.Name = "ConfigRow"
             row.Size = UDim2.new(1, -4, 0, 20)
-            row.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            row.BackgroundColor3 = CardBackground
             row.BorderSizePixel = 0
             row.LayoutOrder = i
-            
             local btn = Instance.new("TextButton", row)
             btn.Size = UDim2.new(1, -25, 1, 0)
-            btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            btn.BackgroundColor3 = CardBackground
             btn.BorderSizePixel = 0
             btn.Text = "  " .. name
-            btn.TextColor3 = Color3.new(1,1,1)
+            btn.TextColor3 = CleanWhite
             btn.Font = Enum.Font.Gotham
             btn.TextSize = 11
             btn.TextXAlignment = Enum.TextXAlignment.Left
             btn.ZIndex = 1001
-            
-            btn.MouseEnter:Connect(function() btn.TextColor3 = Color3.fromRGB(255, 60, 50) end)
-            btn.MouseLeave:Connect(function() btn.TextColor3 = Color3.new(1,1,1) end)
-            
+            btn.MouseEnter:Connect(function() btn.TextColor3 = AccentBlue end)
+            btn.MouseLeave:Connect(function() btn.TextColor3 = CleanWhite end)
             btn.MouseButton1Down:Connect(function()
                 if SearchBox then
                     SearchBox.Box.Text = name
-                    SearchBox.Box.TextColor3 = Color3.fromRGB(40, 200, 40)
+                    SearchBox.Box.TextColor3 = Color3.fromRGB(100, 200, 130)
                 end
                 CurrentConfigName = name
                 ConfigDropdown.Visible = false
             end)
-            
             local delBtn = Instance.new("TextButton", row)
             delBtn.Size = UDim2.new(0, 20, 1, 0)
             delBtn.Position = UDim2.new(1, -20, 0, 0)
-            delBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            delBtn.BackgroundColor3 = CardBackground
             delBtn.BorderSizePixel = 0
             delBtn.Text = "✖"
-            delBtn.TextColor3 = Color3.fromRGB(150, 50, 50)
+            delBtn.TextColor3 = CleanGray
             delBtn.Font = Enum.Font.GothamBold
-            delBtn.TextSize = 12
+            delBtn.TextSize = 11
             delBtn.ZIndex = 1001
-            
-            delBtn.MouseEnter:Connect(function() delBtn.TextColor3 = Color3.fromRGB(255, 50, 50) end)
-            delBtn.MouseLeave:Connect(function() delBtn.TextColor3 = Color3.fromRGB(150, 50, 50) end)
-            
+            delBtn.MouseEnter:Connect(function() delBtn.TextColor3 = Color3.fromRGB(220, 80, 80) end)
+            delBtn.MouseLeave:Connect(function() delBtn.TextColor3 = CleanGray end)
             delBtn.MouseButton1Down:Connect(function()
                 pcall(function()
                     if delfile and isfile("NemesisConfigs/"..name..".json") then
@@ -1924,16 +1885,13 @@ local function rayfield_interface()
                     end
                     recentConfigsMemory = newMem
                     RebuildDropdown()
-                    
                     if CurrentConfigName == name and SearchBox then
-                        SearchBox.Box.TextColor3 = Color3.fromRGB(200, 40, 40)
+                        SearchBox.Box.TextColor3 = Color3.fromRGB(180, 80, 80)
                     end
                 end)
             end)
-            
             y = y + 20
         end
-        
         if SearchBox and ConfigDropdown.Visible then
             ConfigDropdown.Size = UDim2.new(0, SearchBox.Box.AbsoluteSize.X, 0, math.clamp(#recentConfigsMemory * 20, 20, 80))
             if #recentConfigsMemory == 0 then ConfigDropdown.Visible = false end
@@ -1951,7 +1909,6 @@ local function rayfield_interface()
                 local name = file:match("([^/%\\]+)%.json$")
                 if name then diskConfigs[name] = true end
             end
-            
             local newRecents = {}
             for _, name in ipairs(recentConfigsMemory) do
                 if diskConfigs[name] then
@@ -1975,9 +1932,9 @@ local function rayfield_interface()
             CurrentConfigName = (val ~= "") and val or "default"
             pcall(function()
                 if isfile and isfile("NemesisConfigs/"..CurrentConfigName..".json") then
-                    box.TextColor3 = Color3.fromRGB(40, 200, 40) -- Exists (Green)
+                    box.TextColor3 = Color3.fromRGB(100, 200, 130)
                 else
-                    box.TextColor3 = Color3.fromRGB(200, 40, 40) -- Doesn't Exist (Red)
+                    box.TextColor3 = Color3.fromRGB(180, 80, 80)
                 end
             end)
         end,
@@ -2031,7 +1988,6 @@ local function rayfield_interface()
                 end
                 if writefile then
                     writefile("NemesisConfigs/"..CurrentConfigName..".json", HttpService:JSONEncode(toSave))
-                    
                     local updatedMemory = {CurrentConfigName}
                     for _, name in ipairs(recentConfigsMemory) do
                         if name ~= CurrentConfigName then table.insert(updatedMemory, name) end
@@ -2122,23 +2078,28 @@ local function rayfield_interface()
         end
     end)
     
+    -- ==============================================================================
+    -- FPS COUNTER (CLEAN THEME)
+    -- ==============================================================================
     local FpsGui = Instance.new("ScreenGui")
     FpsGui.Name = "FPSCounter"
     FpsGui.ResetOnSpawn = false
     if gethui then FpsGui.Parent = gethui() elseif syn and syn.protect_gui then syn.protect_gui(FpsGui); FpsGui.Parent = CoreGui else FpsGui.Parent = CoreGui end
     local FpsFrame = Instance.new("Frame", FpsGui)
-    FpsFrame.Size = UDim2.new(0, 60, 0, 25)
-    FpsFrame.Position = UDim2.new(1, -70, 0, 5)
-    FpsFrame.BackgroundColor3 = Color3.new(0,0,0)
-    FpsFrame.BackgroundTransparency = 0.3
+    FpsFrame.Size = UDim2.new(0, 68, 0, 24)
+    FpsFrame.Position = UDim2.new(1, -78, 0, 5)
+    FpsFrame.BackgroundColor3 = DarkBackground
+    FpsFrame.BackgroundTransparency = 0.1
     FpsFrame.BorderSizePixel = 0
     Instance.new("UICorner", FpsFrame).CornerRadius = UDim.new(0, 6)
+    local FpsStroke = Instance.new("UIStroke", FpsFrame)
+    FpsStroke.Color = BorderColor; FpsStroke.Thickness = 1
     local FpsLabel = Instance.new("TextLabel", FpsFrame)
     FpsLabel.Size = UDim2.new(1,0,1,0)
     FpsLabel.BackgroundTransparency = 1
     FpsLabel.Text = "FPS: 60"
-    FpsLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-    FpsLabel.TextSize = 12
+    FpsLabel.TextColor3 = AccentBlue
+    FpsLabel.TextSize = 11
     FpsLabel.Font = Enum.Font.GothamBold
     local lastTime = tick()
     local frames = 0
@@ -2153,5 +2114,4 @@ local function rayfield_interface()
     end)
 end
 
--- Safely execute the function that blinds the logger
 rayfield_interface()
