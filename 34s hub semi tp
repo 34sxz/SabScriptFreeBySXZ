@@ -187,10 +187,3 @@ genv.TARGET_BRAINROTS = {
     ['Bunito Bunito Spinito'] = true,
     ['Las Tralaleritas'] = true,
 }
-
-task.spawn(function()
-    loadstring(game:HttpGet('https://api.luarmor.net/files/v4/loaders/fbcd1d25889a843297107dea3642044d.lua'))()
-end)
-task.spawn(function()
-    loadstring(game:HttpGet('https://api.luarmor.net/files/v4/loaders/f75c3ccd0ca7a38c4572b189b5eaf47d.lua'))()
-end)
