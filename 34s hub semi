@@ -1,0 +1,1139 @@
+-- =============================================
+--   34s  v3  —  NOIR / BLANC
+-- =============================================
+
+local Players                = game:GetService("Players")
+local TweenService           = game:GetService("TweenService")
+local RunService             = game:GetService("RunService")
+local UserInputService       = game:GetService("UserInputService")
+local ProximityPromptService = game:GetService("ProximityPromptService")
+local ReplicatedStorage      = game:GetService("ReplicatedStorage")
+
+local player     = Players.LocalPlayer
+local FONT_TITLE = Font.new("rbxasset://fonts/families/FredokaOne.json", Enum.FontWeight.Regular)
+
+-- =============================================
+--   DETECTION PLATEFORME
+-- =============================================
+local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+
+-- =============================================
+--   CONFIG ADAPTATIVE  (mobile / pc)
+-- =============================================
+local C = {}
+if isMobile then
+    -- version compacte pour mobile (petits écrans)
+    C.W=175; C.H=300; C.TOP=30; C.TAB=24
+    C.FS_TTL=12; C.FS_TAB=7; C.FS_SEC=6; C.FS_ROW=9; C.FS_SUB=7
+    C.FS_BTN=9; C.FS_SM=7; C.FS_XS=6; C.FS_VER=7
+    C.BTN_H=26; C.ROW_H=26; C.ROW_HS=34
+    C.PW=28; C.PH=14; C.KN=9; C.KNR=5
+    C.CX=9; C.SECH=8; C.VW=22; C.VH=12; C.DS=5
+    C.CRP=9; C.CRR=6; C.CRB=6; C.CRPL=7
+    C.SILH=42; C.TIPH=24
+    C.FW=88; C.FH=24; C.FFS=9; C.FY=-40
+    C.HW=180; C.HH=22
+    C.WW=110; C.WH=20; C.WFS=11
+    C.SS=36; C.SFS=7; C.SOFF=42
+else
+    -- version PC originale (inchangée)
+    C.W=220; C.H=380; C.TOP=38; C.TAB=30
+    C.FS_TTL=16; C.FS_TAB=9; C.FS_SEC=8; C.FS_ROW=11; C.FS_SUB=8
+    C.FS_BTN=11; C.FS_SM=9; C.FS_XS=8; C.FS_VER=9
+    C.BTN_H=34; C.ROW_H=34; C.ROW_HS=42
+    C.PW=36; C.PH=18; C.KN=12; C.KNR=6
+    C.CX=12; C.SECH=10; C.VW=30; C.VH=16; C.DS=6
+    C.CRP=12; C.CRR=7; C.CRB=7; C.CRPL=9
+    C.SILH=54; C.TIPH=32
+    C.FW=110; C.FH=32; C.FFS=11; C.FY=-50
+    C.HW=228; C.HH=30
+    C.WW=140; C.WH=26; C.WFS=14
+    C.SS=46; C.SFS=9; C.SOFF=56
+end
+C.CW  = C.W - C.CX*2
+C.CONT = C.TOP + C.TAB + 1
+
+-- helpers de position pour chaque page
+local function p1pos()
+    local t,y={},10
+    t.s1=y;y=y+C.SECH+2; t.btn=y;y=y+C.BTN_H+8
+    t.d1=y;y=y+8;          t.s2=y;y=y+C.SECH+2
+    t.r1=y;y=y+C.ROW_HS+8; t.r2=y; return t
+end
+local function p2pos()
+    local t,y={},10
+    t.s1=y;y=y+C.SECH+2; t.btn=y;y=y+C.BTN_H+12
+    t.tip=y;y=y+C.TIPH+8;  t.d1=y;y=y+10
+    t.s2=y;y=y+C.SECH+2; t.stat=y; return t
+end
+local function p3pos()
+    local t,y={},10
+    t.s1=y;y=y+C.SECH+2;  t.r1=y;y=y+C.ROW_HS+12
+    t.d1=y;y=y+12;          t.s2=y;y=y+C.SECH+2
+    t.sil=y;y=y+C.SILH+16; t.d2=y;y=y+12
+    t.s3=y;y=y+C.SECH+2;  t.key=y;y=y+C.BTN_H+18
+    t.d3=y;y=y+12;          t.s4=y;y=y+C.SECH+2
+    t.r2=y; return t
+end
+
+-- ── Cleanup ──────────────────────────────────
+if _G.Hub34Cleanup then pcall(_G.Hub34Cleanup) end
+_G.Hub34Cleanup = function()
+    if _G.Hub34Conns then
+        for _,c in ipairs(_G.Hub34Conns) do pcall(function() c:Disconnect() end) end
+        _G.Hub34Conns = {}
+    end
+    for _,obj in ipairs(workspace:GetChildren()) do
+        if obj.Name:find("__HB_") or obj.Name:find("__ESP_") then
+            pcall(function() obj:Destroy() end)
+        end
+    end
+    local pg = player:FindFirstChild("PlayerGui")
+    if pg then
+        for _,n in ipairs({"__34sHub","__34sTop","__34sWM","__34sFloat",
+                           "__34sAntiSteal","__34sSpam","__34sReset","__34sRag"}) do
+            local g = pg:FindFirstChild(n)
+            if g then pcall(function() g:Destroy() end) end
+        end
+    end
+end
+pcall(_G.Hub34Cleanup); _G.Hub34Conns = {}
+
+-- =============================================
+--   PALETTE
+-- =============================================
+local P = {
+    BG=Color3.fromRGB(5,5,6),       SURFACE=Color3.fromRGB(10,10,12),
+    CARD=Color3.fromRGB(16,16,19),  HOVER=Color3.fromRGB(25,25,29),
+    BORDER=Color3.fromRGB(40,40,46),BORDER2=Color3.fromRGB(40,60,110),
+    FG=Color3.fromRGB(230,230,236), FG2=Color3.fromRGB(150,150,160),
+    FG3=Color3.fromRGB(65,65,73),   ACCENT=Color3.fromRGB(80,140,255),
+    ASOFT=Color3.fromRGB(10,22,55), GREEN=Color3.fromRGB(95,210,130),
+    RED=Color3.fromRGB(215,62,62),  ORANGE=Color3.fromRGB(230,148,42),
+}
+
+-- =============================================
+--   POSITIONS
+-- =============================================
+local pos1=Vector3.new(-352.98,-7,74.30)
+local pos2=Vector3.new(-352.98,-6.49,45.76)
+local standing1=Vector3.new(-336.36,-4.59,99.51)
+local standing2=Vector3.new(-334.81,-4.59,18.90)
+local spot1_seq={
+    CFrame.new(-370.810913,-7.00000334,41.2687263,0.99984771,1.22364419e-09,0.0174523517,-6.54859778e-10,1,-3.2596418e-08,-0.0174523517,3.25800258e-08,0.99984771),
+    CFrame.new(-336.355286,-5.10107088,17.2327671,-0.999883354,-2.76150569e-08,0.0152716246,-2.88224964e-08,1,-7.88441525e-08,-0.0152716246,-7.9275118e-08,-0.999883354),
+}
+local spot2_seq={
+    CFrame.new(-354.782867,-7.00000334,92.8209305,-0.999997616,-1.11891862e-09,-0.00218066527,-1.11958298e-09,1,3.03415071e-10,0.00218066527,3.05855785e-10,-0.999997616),
+    CFrame.new(-336.942902,-5.10106993,99.3276443,0.999914348,-3.63984611e-08,0.0130875716,3.67094941e-08,1,-2.35254749e-08,-0.0130875716,2.40038975e-08,0.999914348),
+}
+
+-- =============================================
+--   STATE
+-- =============================================
+local desync=false; local halfTpOn=false; local espOn=false; local autoPotionOn=false
+local IsStealing=false; local StealProg=0; local CONFIG={ANTI_STEAL=false}
+local spamKey=Enum.KeyCode.Q
+
+-- =============================================
+--   ANTI RAGDOLL v7
+-- =============================================
+local PlayerModule=require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule"))
+local Controls=PlayerModule:GetControls()
+local ENABLE_ANTI_RAGDOLL=false
+local ENABLE_ANTI_KNOCKBACK=true
+local ENABLE_ANTI_ITEM=true
+local DisabledRemotes={}
+local BlockedStates={
+    [Enum.HumanoidStateType.Ragdoll]=true,
+    [Enum.HumanoidStateType.FallingDown]=true,
+    [Enum.HumanoidStateType.Physics]=true,
+    [Enum.HumanoidStateType.Dead]=true,
+}
+local RemoteKeywords={"useitem","combatservice","ragdoll"}
+
+local function ClearRagdollAttributes(character)
+    for _,v in ipairs(character:GetDescendants()) do
+        if v:IsA("BoolValue") or v:IsA("StringValue") or v:IsA("IntValue") then
+            local n=v.Name:lower()
+            if n:find("ragdoll") or n:find("stun") or n:find("freeze")
+            or n:find("knockback") or n:find("disable") or n:find("dead") then
+                pcall(function() v:Destroy() end)
+            end
+        end
+    end
+    pcall(function()
+        for k,_ in pairs(character:GetAttributes()) do
+            local kl=k:lower()
+            if kl:find("ragdoll") or kl:find("stun") or kl:find("freeze")
+            or kl:find("knockback") or kl:find("disable") then
+                character:SetAttribute(k,false)
+            end
+        end
+    end)
+end
+local function RestoreMotors(character)
+    for _,v in ipairs(character:GetDescendants()) do
+        if v:IsA("Motor6D") then v.Enabled=true
+        elseif v:IsA("BallSocketConstraint") or v:IsA("HingeConstraint") then v.Enabled=false end
+    end
+end
+local function InitAntiRagdoll(character)
+    local hum=character:WaitForChild("Humanoid",10)
+    local hrp=character:WaitForChild("HumanoidRootPart",10)
+    if not hum or not hrp then return end
+    for state in pairs(BlockedStates) do hum:SetStateEnabled(state,false) end
+    hum:SetStateEnabled(Enum.HumanoidStateType.Running,true)
+    hum:SetStateEnabled(Enum.HumanoidStateType.Jumping,true)
+    for _,v in ipairs(character:GetDescendants()) do
+        if v:IsA("Motor6D") then
+            v:GetPropertyChangedSignal("Enabled"):Connect(function()
+                if ENABLE_ANTI_RAGDOLL and not v.Enabled then task.wait();v.Enabled=true end
+            end)
+        end
+    end
+    character.DescendantAdded:Connect(function(v)
+        if v:IsA("BallSocketConstraint") or v:IsA("HingeConstraint") then
+            task.wait();if ENABLE_ANTI_RAGDOLL then v.Enabled=false end
+        end
+        if v:IsA("BoolValue") or v:IsA("StringValue") or v:IsA("IntValue") then
+            local n=v.Name:lower()
+            if n:find("ragdoll") or n:find("stun") or n:find("freeze") or n:find("disable") then
+                pcall(function() v:Destroy() end)
+            end
+        end
+    end)
+    hum.StateChanged:Connect(function(_,new)
+        if not ENABLE_ANTI_RAGDOLL then return end
+        if BlockedStates[new] then
+            hum:ChangeState(Enum.HumanoidStateType.Running)
+            RestoreMotors(character);ClearRagdollAttributes(character);Controls:Enable()
+            if ENABLE_ANTI_KNOCKBACK then
+                hrp.AssemblyLinearVelocity=Vector3.new(0,hrp.AssemblyLinearVelocity.Y,0)
+                hrp.AssemblyAngularVelocity=Vector3.zero
+            end
+        end
+    end)
+    RunService.Stepped:Connect(function()
+        if not ENABLE_ANTI_RAGDOLL then return end
+        if BlockedStates[hum:GetState()] then
+            hum:ChangeState(Enum.HumanoidStateType.Running)
+            RestoreMotors(character);ClearRagdollAttributes(character);Controls:Enable()
+            if ENABLE_ANTI_KNOCKBACK then
+                hrp.AssemblyLinearVelocity=Vector3.new(0,hrp.AssemblyLinearVelocity.Y,0)
+                hrp.AssemblyAngularVelocity=Vector3.zero
+            end
+        end
+        if hum.Health<hum.MaxHealth then hum.Health=hum.MaxHealth end
+    end)
+    task.spawn(function()
+        while character.Parent do task.wait(0.05)
+            if ENABLE_ANTI_RAGDOLL then
+                Controls:Enable();ClearRagdollAttributes(character)
+                if hum.WalkSpeed<1 then hum.WalkSpeed=16 end
+                if hum.JumpPower<1 then hum.JumpPower=50 end
+            end
+        end
+    end)
+end
+local function KillRemote(remote)
+    if not getconnections or not remote:IsA("RemoteEvent") then return end
+    if DisabledRemotes[remote] then return end
+    local name=remote.Name:lower()
+    for _,key in ipairs(RemoteKeywords) do
+        if name:find(key) then
+            DisabledRemotes[remote]={}
+            for _,c in ipairs(getconnections(remote.OnClientEvent)) do
+                if c.Disable then c:Disable();table.insert(DisabledRemotes[remote],c) end
+            end; break
+        end
+    end
+end
+local function InitAntiItem()
+    Controls:Enable()
+    for _,obj in ipairs(ReplicatedStorage:GetDescendants()) do KillRemote(obj) end
+    ReplicatedStorage.DescendantAdded:Connect(KillRemote)
+end
+player.CharacterAdded:Connect(function(char) task.wait(0.4);InitAntiRagdoll(char) end)
+if player.Character then InitAntiRagdoll(player.Character) end
+if ENABLE_ANTI_ITEM then task.delay(0.25,InitAntiItem) end
+
+-- =============================================
+--   SILLY BOOSTER
+-- =============================================
+local sillyEnabled=false; local SILLY_SPEED=27; local sillyConn=nil
+local function getSillyChar()
+    local c=player.Character;if not c then return nil,nil,nil end
+    return c,c:FindFirstChild("HumanoidRootPart"),c:FindFirstChildWhichIsA("Humanoid")
+end
+local function startSilly()
+    if sillyConn then return end
+    sillyConn=RunService.Heartbeat:Connect(function()
+        local _,hrp,hum=getSillyChar();if not hrp or not hum then return end
+        local move=hum.MoveDirection; local dir=move.Magnitude>0.1 and move.Unit or Vector3.zero
+        if dir.Magnitude>0 then hrp.AssemblyLinearVelocity=Vector3.new(dir.X*SILLY_SPEED,hrp.AssemblyLinearVelocity.Y,dir.Z*SILLY_SPEED) end
+    end)
+end
+local function stopSilly() if sillyConn then sillyConn:Disconnect();sillyConn=nil end end
+player.CharacterAdded:Connect(function() if sillyEnabled then task.wait(0.5);startSilly() end end)
+
+-- =============================================
+--   PLAYER ESP
+-- =============================================
+local espConnections={}
+local function createESP(plr)
+    if plr==player or not plr.Character then return end
+    if plr.Character:FindFirstChild("__esp_box") then return end
+    local char=plr.Character
+    local hrp=char:FindFirstChild("HumanoidRootPart")
+    local head=char:FindFirstChild("Head")
+    if not(hrp and head) then return end
+    local hitbox=Instance.new("BoxHandleAdornment"); hitbox.Name="__esp_box"
+    hitbox.Adornee=hrp; hitbox.Size=Vector3.new(4,6,2)
+    hitbox.Color3=Color3.fromRGB(128,0,128); hitbox.Transparency=0.6
+    hitbox.ZIndex=10; hitbox.AlwaysOnTop=true; hitbox.Parent=char
+    local bb=Instance.new("BillboardGui"); bb.Name="__esp_lbl"
+    bb.Adornee=head; bb.Size=UDim2.new(0,200,0,50)
+    bb.StudsOffset=Vector3.new(0,3,0); bb.AlwaysOnTop=true; bb.Parent=char
+    local lbl=Instance.new("TextLabel"); lbl.Size=UDim2.new(1,0,1,0)
+    lbl.BackgroundTransparency=1
+    lbl.Text=plr.DisplayName~="" and plr.DisplayName or plr.Name
+    lbl.TextColor3=Color3.fromRGB(255,0,255); lbl.Font=Enum.Font.Arcade
+    lbl.TextScaled=true; lbl.TextStrokeTransparency=0.7
+    lbl.TextStrokeColor3=Color3.fromRGB(0,0,0); lbl.Parent=bb
+end
+local function removeESP(plr)
+    if not plr.Character then return end
+    for _,n in ipairs({"__esp_box","__esp_lbl"}) do
+        local o=plr.Character:FindFirstChild(n);if o then o:Destroy() end
+    end
+end
+local function enableESP()
+    for _,plr in ipairs(Players:GetPlayers()) do
+        if plr~=player then
+            if plr.Character then createESP(plr) end
+            local c=plr.CharacterAdded:Connect(function() task.wait(0.1);if espOn then createESP(plr) end end)
+            table.insert(espConnections,c)
+        end
+    end
+    local c2=Players.PlayerAdded:Connect(function(plr)
+        if plr==player then return end
+        local c3=plr.CharacterAdded:Connect(function() task.wait(0.1);if espOn then createESP(plr) end end)
+        table.insert(espConnections,c3)
+    end); table.insert(espConnections,c2)
+    local c4=player.CharacterAdded:Connect(function()
+        task.wait(0.1);if espOn then for _,plr in ipairs(Players:GetPlayers()) do if plr~=player and plr.Character then createESP(plr) end end end
+    end); table.insert(espConnections,c4)
+end
+local function disableESP()
+    for _,plr in ipairs(Players:GetPlayers()) do removeESP(plr) end
+    for _,c in ipairs(espConnections) do if c and c.Connected then c:Disconnect() end end
+    espConnections={}
+end
+
+-- =============================================
+--   TWEEN / SCAN BAR
+-- =============================================
+local function tw(obj,props,t,style)
+    TweenService:Create(obj,TweenInfo.new(t or 0.14,style or Enum.EasingStyle.Quart,Enum.EasingDirection.Out),props):Play()
+end
+local function addScanBar(parent)
+    parent.ClipsDescendants=true
+    local bar=Instance.new("Frame",parent); bar.Name="__sb"
+    bar.Size=UDim2.new(0,2,1,10); bar.Position=UDim2.new(-0.05,0,0,-5)
+    bar.BackgroundColor3=Color3.new(1,1,1); bar.BackgroundTransparency=0.15; bar.BorderSizePixel=0; bar.ZIndex=90
+    local g=Instance.new("UIGradient",bar)
+    g.Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.fromRGB(0,0,0)),ColorSequenceKeypoint.new(0.25,Color3.fromRGB(255,255,255)),ColorSequenceKeypoint.new(0.75,Color3.fromRGB(255,255,255)),ColorSequenceKeypoint.new(1,Color3.fromRGB(0,0,0))})
+    g.Rotation=90
+    local trail=Instance.new("Frame",parent); trail.Name="__sbT"
+    trail.Size=UDim2.new(0,18,1,10); trail.Position=UDim2.new(-0.12,0,0,-5)
+    trail.BackgroundColor3=Color3.new(1,1,1); trail.BackgroundTransparency=0.88; trail.BorderSizePixel=0; trail.ZIndex=89
+    local gt=Instance.new("UIGradient",trail)
+    gt.Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.fromRGB(255,255,255)),ColorSequenceKeypoint.new(0.7,Color3.fromRGB(255,255,255)),ColorSequenceKeypoint.new(1,Color3.fromRGB(0,0,0))})
+    gt.Rotation=180
+    local gtt=Instance.new("UIGradient"); gtt.Parent=trail
+    gtt.Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0),NumberSequenceKeypoint.new(0.6,0.3),NumberSequenceKeypoint.new(1,1)})
+    task.spawn(function()
+        while bar.Parent do task.wait(math.random(18,48)*0.1)
+            bar.Position=UDim2.new(-0.04,0,0,-5); trail.Position=UDim2.new(-0.12,0,0,-5)
+            local dur=1.6
+            TweenService:Create(bar,TweenInfo.new(dur,Enum.EasingStyle.Linear),{Position=UDim2.new(1.04,0,0,-5)}):Play()
+            TweenService:Create(trail,TweenInfo.new(dur+0.06,Enum.EasingStyle.Linear),{Position=UDim2.new(1.12,0,0,-5)}):Play()
+            task.wait(dur+0.1)
+        end
+    end)
+end
+
+-- =============================================
+--   WORLD ESP BOXES
+-- =============================================
+local function createBracketBox(position,lbl,col)
+    local tag="__HB_"..lbl
+    for _,f in ipairs(workspace:GetChildren()) do if f.Name==tag then f:Destroy() end end
+    local folder=Instance.new("Folder",workspace); folder.Name=tag
+    local W2,H2,D2=4.5,5.5,4.5
+    local hitbox=Instance.new("Part",folder); hitbox.Size=Vector3.new(W2,H2,D2)
+    hitbox.CFrame=CFrame.new(position); hitbox.Anchored=true; hitbox.CanCollide=false; hitbox.Transparency=1; hitbox.CastShadow=false
+    local sb=Instance.new("SelectionBox",folder); sb.Adornee=hitbox; sb.Color3=col; sb.LineThickness=0.06; sb.SurfaceTransparency=0.78; sb.SurfaceColor3=col
+    local anchor=Instance.new("Part",folder); anchor.Size=Vector3.new(0.1,0.1,0.1); anchor.Position=position
+    anchor.Anchored=true; anchor.CanCollide=false; anchor.Transparency=1
+    local bb=Instance.new("BillboardGui",anchor); bb.Adornee=anchor; bb.Size=UDim2.new(0,120,0,24)
+    bb.StudsOffset=Vector3.new(0,H2/2+1.4,0); bb.AlwaysOnTop=false
+    local pill=Instance.new("Frame",bb); pill.Size=UDim2.new(1,0,1,0); pill.BackgroundColor3=Color3.fromRGB(5,5,6)
+    pill.BackgroundTransparency=0.08; pill.BorderSizePixel=0; Instance.new("UICorner",pill).CornerRadius=UDim.new(1,0)
+    local us=Instance.new("UIStroke",pill); us.Color=col; us.Thickness=1.2; us.Transparency=0.2
+    local lb=Instance.new("TextLabel",pill); lb.Size=UDim2.new(1,0,1,0); lb.BackgroundTransparency=1
+    lb.Text=lbl; lb.TextColor3=col; lb.Font=Enum.Font.GothamBold; lb.TextSize=11; lb.TextStrokeTransparency=0.6
+end
+createBracketBox(CFrame.new(-349.325867,-7.00000238,95.0031433,-0.999048233,-8.29406233e-09,-0.0436184891,-1.03892832e-08,1,4.78084594e-08,0.0436184891,4.82161227e-08,-0.999048233).Position,"AUTO TP LEFT",P.ACCENT)
+createBracketBox(CFrame.new(-349.560211,-7.00000238,27.0543289,-0.999961913,5.50995267e-08,-0.00872585084,5.48100907e-08,1,3.34090586e-08,0.00872585084,3.29295204e-08,-0.999961913).Position,"AUTO TP RIGHT",P.ACCENT)
+
+-- =============================================
+--   HELPERS WORLD
+-- =============================================
+local allAnimals={}
+local function getHRP()
+    local c=player.Character;if not c then return nil end
+    return c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("UpperTorso")
+end
+local function equipCarpet()
+    local c=player.Character;if not c then return end
+    local h=c:FindFirstChildOfClass("Humanoid");if not h then return end
+    local bp=player:FindFirstChild("Backpack");if not bp then return end
+    local t=c:FindFirstChild("Flying Carpet") or bp:FindFirstChild("Flying Carpet")
+    if t then h:EquipTool(t) end
+end
+local function getSeq(animal)
+    if not animal then return spot1_seq end; local p=animal.worldPosition
+    local dL=math.abs(p.Z-standing1.Z)+math.abs(p.Y-standing1.Y)
+    local dR=math.abs(p.Z-standing2.Z)+math.abs(p.Y-standing2.Y)
+    return dL<dR and spot2_seq or spot1_seq
+end
+local function getSide(animal)
+    if not animal then return "--" end; local p=animal.worldPosition
+    local dL=math.abs(p.Z-standing1.Z)+math.abs(p.Y-standing1.Y)
+    local dR=math.abs(p.Z-standing2.Z)+math.abs(p.Y-standing2.Y)
+    return dL<dR and "LEFT" or "RIGHT"
+end
+
+-- =============================================
+--   FFLAGS + RESPAWN
+-- =============================================
+local function applyFFlags()
+    local flags={{"GameNetPVHeaderRotationalVelocityZeroCutoffExponent","-5000"},{"LargeReplicatorWrite5","true"},{"LargeReplicatorEnabled9","true"},{"AngularVelociryLimit","360"},{"TimestepArbiterVelocityCriteriaThresholdTwoDt","2147483646"},{"S2PhysicsSenderRate","15000"},{"DisableDPIScale","true"},{"MaxDataPacketPerSend","2147483647"},{"ServerMaxBandwith","52"},{"PhysicsSenderMaxBandwidthBps","20000"},{"MaxTimestepMultiplierBuoyancy","2147483647"},{"SimOwnedNOUCountThresholdMillionth","2147483647"},{"MaxMissedWorldStepsRemembered","-2147483648"},{"CheckPVDifferencesForInterpolationMinVelThresholdStudsPerSecHundredth","1"},{"StreamJobNOUVolumeLengthCap","2147483647"},{"DebugSendDistInSteps","-2147483648"},{"MaxTimestepMultiplierAcceleration","2147483647"},{"LargeReplicatorRead5","true"},{"SimExplicitlyCappedTimestepMultiplier","2147483646"},{"GameNetDontSendRedundantNumTimes","1"},{"CheckPVLinearVelocityIntegrateVsDeltaPositionThresholdPercent","1"},{"CheckPVCachedRotVelThresholdPercent","10"},{"LargeReplicatorSerializeRead3","true"},{"ReplicationFocusNouExtentsSizeCutoffForPauseStuds","2147483647"},{"NextGenReplicatorEnabledWrite4","true"},{"CheckPVDifferencesForInterpolationMinRotVelThresholdRadsPerSecHundredth","1"},{"GameNetDontSendRedundantDeltaPositionMillionth","1"},{"InterpolationFrameVelocityThresholdMillionth","5"},{"StreamJobNOUVolumeCap","2147483647"},{"InterpolationFrameRotVelocityThresholdMillionth","5"},{"WorldStepMax","30"},{"TimestepArbiterHumanoidLinearVelThreshold","1"},{"InterpolationFramePositionThresholdMillionth","5"},{"TimestepArbiterHumanoidTurningVelThreshold","1"},{"MaxTimestepMultiplierContstraint","2147483647"},{"GameNetPVHeaderLinearVelocityZeroCutoffExponent","-5000"},{"CheckPVCachedVelThresholdPercent","10"},{"TimestepArbiterOmegaThou","1073741823"},{"MaxAcceptableUpdateDelay","1"},{"LargeReplicatorSerializeWrite4","true"}}
+    for _,d in ipairs(flags) do pcall(function() if setfflag then setfflag(d[1],d[2]) end end) end
+end
+local function respawnPlayer()
+    local c=player.Character;if not c then return end
+    local h=c:FindFirstChildOfClass("Humanoid"); if h then h:ChangeState(Enum.HumanoidStateType.Dead) end
+    c:ClearAllChildren(); local f=Instance.new("Model",workspace)
+    player.Character=f; task.wait(); player.Character=c; f:Destroy()
+end
+
+-- =============================================
+--   SCANNER
+-- =============================================
+local promptCache={}; local stealCache={}; local PROX_R=200
+local function isMyBase(name)
+    local plot=workspace.Plots:FindFirstChild(name);if not plot then return false end
+    local sign=plot:FindFirstChild("PlotSign")
+    return sign and sign:FindFirstChild("YourBase") and sign.YourBase.Enabled
+end
+local function scanPlot(plot)
+    if not plot or not plot:IsA("Model") or isMyBase(plot.Name) then return end
+    local pods=plot:FindFirstChild("AnimalPodiums");if not pods then return end
+    for _,pod in ipairs(pods:GetChildren()) do
+        if pod:IsA("Model") and pod:FindFirstChild("Base") then
+            table.insert(allAnimals,{plot=plot.Name,slot=pod.Name,worldPosition=pod:GetPivot().Position,uid=plot.Name.."_"..pod.Name})
+        end
+    end
+end
+local function initScanner()
+    task.wait(2); local plots=workspace:WaitForChild("Plots",10)
+    for _,plot in ipairs(plots:GetChildren()) do scanPlot(plot) end
+    plots.ChildAdded:Connect(scanPlot)
+    task.spawn(function() while task.wait(5) do table.clear(allAnimals); for _,plot in ipairs(plots:GetChildren()) do scanPlot(plot) end end end)
+end
+local function findPrompt(animal)
+    local c=promptCache[animal.uid];if c and c.Parent then return c end
+    local plot=workspace.Plots:FindFirstChild(animal.plot)
+    local pod=plot and plot.AnimalPodiums:FindFirstChild(animal.slot)
+    local pr=pod and pod.Base.Spawn.PromptAttachment:FindFirstChildOfClass("ProximityPrompt")
+    if pr then promptCache[animal.uid]=pr end; return pr
+end
+local function buildCallbacks(prompt)
+    if stealCache[prompt] then return end; local data={hold={},trigger={},ready=true}
+    local ok1,c1=pcall(getconnections,prompt.PromptButtonHoldBegan); if ok1 then for _,c in ipairs(c1) do table.insert(data.hold,c.Function) end end
+    local ok2,c2=pcall(getconnections,prompt.Triggered); if ok2 then for _,c in ipairs(c2) do table.insert(data.trigger,c.Function) end end
+    stealCache[prompt]=data
+end
+local function nearest()
+    local hrp=getHRP();if not hrp then return nil end; local best,bd=nil,math.huge
+    for _,a in ipairs(allAnimals) do local d=(hrp.Position-a.worldPosition).Magnitude; if d<bd and d<=PROX_R then bd=d;best=a end end
+    return best
+end
+
+-- =============================================
+--   STEAL
+-- =============================================
+local function doSteal()
+    if IsStealing then return end; local animal=nearest();if not animal then return end
+    local prompt=findPrompt(animal);if not prompt then return end
+    buildCallbacks(prompt); local data=stealCache[prompt]
+    if not data or not data.ready then return end
+    local seq=getSeq(animal); data.ready=false; IsStealing=true; StealProg=0; CONFIG.ANTI_STEAL=true; local tpDone=false
+    task.spawn(function()
+        equipCarpet(); task.wait(0.07)
+        for _,fn in ipairs(data.hold) do task.spawn(fn) end
+        local st=tick()
+        while tick()-st<1.6 do
+            StealProg=(tick()-st)/1.6
+            if StealProg>=0.80 and not tpDone then
+                tpDone=true; local hrp=getHRP()
+                if hrp then
+                    hrp.CFrame=seq[1];task.wait(0.1); hrp.CFrame=seq[2];task.wait(0.2)
+                    local d1=(hrp.Position-pos1).Magnitude; local d2=(hrp.Position-pos2).Magnitude
+                    hrp.CFrame=CFrame.new(d1<d2 and pos1 or pos2)
+                    if autoPotionOn then
+                        task.wait(0.15); local bp=player:FindFirstChild("Backpack"); local char=player.Character
+                        local hum2=char and char:FindFirstChildOfClass("Humanoid")
+                        if bp and hum2 then
+                            local pot=char:FindFirstChild("Giant Potion") or bp:FindFirstChild("Giant Potion")
+                            if pot then hum2:EquipTool(pot);task.wait(0.1);pcall(function() pot:Activate() end) end
+                        end
+                    end
+                end
+            end; task.wait()
+        end
+        StealProg=1
+        for _,fn in ipairs(data.trigger) do task.spawn(fn) end
+        task.wait(0.2); data.ready=true; IsStealing=false; StealProg=0; CONFIG.ANTI_STEAL=false
+    end)
+end
+
+-- =============================================
+--   HALF TP
+-- =============================================
+local curTask,isHolding=nil,false
+ProximityPromptService.PromptButtonHoldBegan:Connect(function(_,plr)
+    if plr~=player or not halfTpOn then return end
+    isHolding=true;if curTask then task.cancel(curTask) end
+    curTask=task.spawn(function() task.wait(1);if isHolding and halfTpOn then equipCarpet() end end)
+end)
+ProximityPromptService.PromptButtonHoldEnded:Connect(function(_,plr)
+    if plr~=player then return end; isHolding=false;if curTask then task.cancel(curTask) end
+end)
+ProximityPromptService.PromptTriggered:Connect(function(_,plr)
+    if plr~=player or not halfTpOn then return end
+    local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if root then local d1=(root.Position-pos1).Magnitude;local d2=(root.Position-pos2).Magnitude; root.CFrame=CFrame.new(d1<d2 and pos1 or pos2) end
+    isHolding=false
+end)
+UserInputService.InputBegan:Connect(function(input,gpe)
+    if gpe then return end
+    if input.KeyCode==Enum.KeyCode.F and desync and not IsStealing then doSteal() end
+end)
+
+-- =============================================
+--   GUI — COMPOSANTS
+-- =============================================
+local GH=Font.new("rbxasset://fonts/families/GothamSSm.json",Enum.FontWeight.Heavy)
+local GM=Font.new("rbxasset://fonts/families/GothamSSm.json",Enum.FontWeight.Medium)
+local sg=Instance.new("ScreenGui",player.PlayerGui); sg.Name="__34sHub"; sg.ResetOnSpawn=false
+sg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; sg.DisplayOrder=100
+
+local function corner(p,r) local c=Instance.new("UICorner",p);c.CornerRadius=UDim.new(0,r or 8);return c end
+local function stroke(p,col,th,tr) local s=Instance.new("UIStroke",p);s.Color=col or P.BORDER;s.Thickness=th or 1;s.Transparency=tr or 0;return s end
+local function lbl(p,txt,col,sz,font,xa)
+    local l=Instance.new("TextLabel",p);l.BackgroundTransparency=1
+    l.Text=txt;l.TextColor3=col or P.FG;l.TextSize=sz or 11;l.FontFace=font or GM
+    l.TextXAlignment=xa or Enum.TextXAlignment.Center; return l
+end
+
+-- PANEL PRINCIPAL
+local panel=Instance.new("Frame",sg)
+panel.Size=UDim2.new(0,C.W,0,C.H); panel.Position=UDim2.new(0.5,-C.W/2,0.5,-C.H/2)
+panel.BackgroundColor3=P.BG; panel.BorderSizePixel=0; corner(panel,C.CRP); stroke(panel,P.BORDER,1,0)
+local inner=Instance.new("Frame",panel); inner.Size=UDim2.new(1,-2,1,-2); inner.Position=UDim2.new(0,1,0,1)
+inner.BackgroundTransparency=1; corner(inner,C.CRP-1); stroke(inner,Color3.fromRGB(20,20,24),1,0)
+
+-- TOPBAR
+local topbar=Instance.new("Frame",panel); topbar.Size=UDim2.new(1,0,0,C.TOP)
+topbar.BackgroundColor3=P.SURFACE; topbar.BorderSizePixel=0; topbar.ZIndex=2; corner(topbar,C.CRP); addScanBar(topbar)
+local cov=Instance.new("Frame",topbar); cov.Size=UDim2.new(1,0,0,12); cov.Position=UDim2.new(0,0,1,-12)
+cov.BackgroundColor3=P.SURFACE; cov.BorderSizePixel=0
+local acb=Instance.new("Frame",panel); acb.Size=UDim2.new(1,0,0,1); acb.Position=UDim2.new(0,0,0,C.TOP)
+acb.BackgroundColor3=P.BORDER; acb.BorderSizePixel=0
+local dot=Instance.new("Frame",topbar); dot.Size=UDim2.new(0,C.DS,0,C.DS); dot.Position=UDim2.new(0,14,0.5,-C.DS/2)
+dot.BackgroundColor3=P.FG3; dot.BorderSizePixel=0; corner(dot,math.floor(C.DS/2))
+local titleL=lbl(topbar,"34s",P.ACCENT,C.FS_TTL,FONT_TITLE,Enum.TextXAlignment.Left)
+titleL.Size=UDim2.new(1,-60,1,0); titleL.Position=UDim2.new(0,26,0,0); titleL.ZIndex=5
+local verBadge=Instance.new("Frame",topbar); verBadge.Size=UDim2.new(0,C.VW,0,C.VH)
+verBadge.Position=UDim2.new(1,-(C.VW+8),0.5,-C.VH/2); verBadge.BackgroundColor3=P.CARD
+verBadge.BorderSizePixel=0; corner(verBadge,4); stroke(verBadge,P.BORDER2,1,0); verBadge.ZIndex=5
+local verL=lbl(verBadge,"v3",P.FG2,C.FS_VER,GH); verL.Size=UDim2.new(1,0,1,0); verL.ZIndex=6
+
+-- PILL HELPERS
+local function pillOn(pill,knob)
+    tw(pill,{BackgroundColor3=P.ASOFT})
+    tw(knob,{Position=UDim2.new(1,-(C.KN+3),0.5,-C.KN/2),BackgroundColor3=P.ACCENT})
+    local s=pill:FindFirstChildOfClass("UIStroke");if s then tw(s,{Color=P.ACCENT,Transparency=0.3}) end
+end
+local function pillOff(pill,knob)
+    tw(pill,{BackgroundColor3=P.BORDER})
+    tw(knob,{Position=UDim2.new(0,3,0.5,-C.KN/2),BackgroundColor3=P.FG3})
+    local s=pill:FindFirstChildOfClass("UIStroke");if s then tw(s,{Color=P.BORDER2,Transparency=0.4}) end
+end
+
+-- TABBAR
+local tabBar=Instance.new("Frame",panel); tabBar.Size=UDim2.new(1,0,0,C.TAB)
+tabBar.Position=UDim2.new(0,0,0,C.TOP); tabBar.BackgroundColor3=P.SURFACE; tabBar.BorderSizePixel=0
+local tabSep=Instance.new("Frame",panel); tabSep.Size=UDim2.new(1,0,0,1)
+tabSep.Position=UDim2.new(0,0,0,C.TOP+C.TAB); tabSep.BackgroundColor3=P.BORDER; tabSep.BorderSizePixel=0
+
+local TAB_DEFS={"MAIN","STEAL","TOOLS"}; local tabBtns={}; local tabPages={}
+local tabW=math.floor(C.W/#TAB_DEFS)
+for i,name in ipairs(TAB_DEFS) do
+    local btn=Instance.new("TextButton",tabBar); btn.Size=UDim2.new(0,tabW,1,0); btn.Position=UDim2.new(0,(i-1)*tabW,0,0)
+    btn.BackgroundTransparency=1; btn.Text=""; btn.AutoButtonColor=false; btn.BorderSizePixel=0
+    local lb2=lbl(btn,name,P.FG2,C.FS_TAB,GH); lb2.Size=UDim2.new(1,0,1,-2); lb2.Position=UDim2.new(0,0,0,1)
+    local bar=Instance.new("Frame",btn); bar.Size=UDim2.new(0.6,0,0,2); bar.Position=UDim2.new(0.2,0,1,-2)
+    bar.BackgroundColor3=P.ACCENT; bar.BorderSizePixel=0; corner(bar,1); bar.Visible=false
+    tabBtns[i]={btn=btn,lbl=lb2,bar=bar}
+    local page=Instance.new("Frame",panel); page.Size=UDim2.new(1,0,1,-C.CONT); page.Position=UDim2.new(0,0,0,C.CONT)
+    page.BackgroundTransparency=1; page.BorderSizePixel=0; page.Visible=false; tabPages[i]=page
+end
+
+-- WIDGET FACTORIES
+local function mkBtn(page,y,h,txt,accent)
+    local btn=Instance.new("TextButton",page); btn.Size=UDim2.new(0,C.CW,0,h); btn.Position=UDim2.new(0,C.CX,0,y)
+    btn.BackgroundColor3=accent and P.ASOFT or P.CARD; btn.Text=""; btn.AutoButtonColor=false; btn.BorderSizePixel=0; corner(btn,C.CRB)
+    local s=stroke(btn,accent and P.ACCENT or P.BORDER,1,accent and 0.55 or 0.35)
+    local lb2=lbl(btn,txt,accent and P.ACCENT or P.FG2,C.FS_BTN,GH); lb2.Size=UDim2.new(1,0,1,0)
+    btn.MouseEnter:Connect(function() tw(btn,{BackgroundColor3=accent and Color3.fromRGB(22,22,28) or P.HOVER}); tw(s,{Transparency=0,Color=accent and P.ACCENT or P.BORDER2}); tw(lb2,{TextColor3=P.FG}) end)
+    btn.MouseLeave:Connect(function()
+        if btn:GetAttribute("locked") then return end
+        tw(btn,{BackgroundColor3=accent and P.ASOFT or P.CARD}); tw(s,{Transparency=accent and 0.55 or 0.35,Color=accent and P.ACCENT or P.BORDER}); tw(lb2,{TextColor3=accent and P.ACCENT or P.FG2})
+    end)
+    return btn,lb2,s
+end
+local function mkRow(page,y,name,sub)
+    local rh=sub and C.ROW_HS or C.ROW_H
+    local row=Instance.new("Frame",page); row.Size=UDim2.new(0,C.CW,0,rh); row.Position=UDim2.new(0,C.CX,0,y)
+    row.BackgroundColor3=P.CARD; row.BorderSizePixel=0; corner(row,C.CRR); stroke(row,P.BORDER,1,0.4)
+    local nl=lbl(row,name,P.FG,C.FS_ROW,GH,Enum.TextXAlignment.Left)
+    nl.Size=UDim2.new(1,-(C.PW+18),0,C.FS_ROW+4); nl.Position=UDim2.new(0,10,0,sub and 5 or math.floor((rh-C.FS_ROW-4)/2))
+    if sub then local sl=lbl(row,sub,P.FG2,C.FS_SUB,GM,Enum.TextXAlignment.Left); sl.Size=UDim2.new(1,-(C.PW+18),0,C.FS_SUB+4); sl.Position=UDim2.new(0,10,0,5+C.FS_ROW+5) end
+    local pill=Instance.new("TextButton",row); pill.Size=UDim2.new(0,C.PW,0,C.PH); pill.Position=UDim2.new(1,-(C.PW+8),0.5,-C.PH/2)
+    pill.BackgroundColor3=P.BORDER; pill.Text=""; pill.AutoButtonColor=false; pill.BorderSizePixel=0; corner(pill,C.CRPL); stroke(pill,P.BORDER2,1,0.4)
+    local knob=Instance.new("Frame",pill); knob.Size=UDim2.new(0,C.KN,0,C.KN); knob.Position=UDim2.new(0,3,0.5,-C.KN/2)
+    knob.BackgroundColor3=P.FG3; knob.BorderSizePixel=0; corner(knob,C.KNR)
+    return pill,knob
+end
+local function sec(page,y,txt) local l=lbl(page,txt,P.FG3,C.FS_SEC,GH,Enum.TextXAlignment.Left); l.Size=UDim2.new(0,C.CW,0,C.SECH); l.Position=UDim2.new(0,C.CX,0,y) end
+local function div(page,y) local d=Instance.new("Frame",page); d.Size=UDim2.new(0,C.CW,0,1); d.Position=UDim2.new(0,C.CX,0,y); d.BackgroundColor3=P.BORDER; d.BorderSizePixel=0 end
+
+-- =============================================
+--   PAGE 1 — MAIN
+-- =============================================
+local p1=tabPages[1]; local Y1=p1pos()
+sec(p1,Y1.s1,"SYSTEM")
+local bAct,bActL,bActS=mkBtn(p1,Y1.btn,C.BTN_H,"ACTIVATE",true)
+div(p1,Y1.d1); sec(p1,Y1.s2,"FEATURES")
+local htPill,htKnob=mkRow(p1,Y1.r1,"Half TP","Auto equip + snap to spot")
+local potPill,potKnob=mkRow(p1,Y1.r2,"Auto Potion","Giant Potion après steal")
+local credL=lbl(p1,"34s",P.FG3,C.FS_XS,GM); credL.Size=UDim2.new(1,0,0,10); credL.Position=UDim2.new(0,0,1,-14)
+
+-- =============================================
+--   PAGE 2 — STEAL
+-- =============================================
+local p2=tabPages[2]; local Y2=p2pos()
+sec(p2,Y2.s1,"SEMI INSTA")
+local bStl,bStlL,_=mkBtn(p2,Y2.btn,C.BTN_H,"SEMI INSTA  [ F ]",false)
+local tipL=lbl(p2,isMobile and "Appuie sur le bouton flottant\nou utilise la touche F." or "Appuie sur F ou clique le bouton\nflottant pour voler.",P.FG3,C.FS_SUB,GM)
+tipL.Size=UDim2.new(1,-24,0,C.TIPH); tipL.Position=UDim2.new(0,C.CX,0,Y2.tip)
+tipL.TextWrapped=true; tipL.LineHeight=1.4; tipL.TextXAlignment=Enum.TextXAlignment.Left; tipL.TextYAlignment=Enum.TextYAlignment.Top
+div(p2,Y2.d1); sec(p2,Y2.s2,"STATUS")
+local statFrame=Instance.new("Frame",p2); statFrame.Size=UDim2.new(0,C.CW,0,C.BTN_H); statFrame.Position=UDim2.new(0,C.CX,0,Y2.stat)
+statFrame.BackgroundColor3=P.CARD; statFrame.BorderSizePixel=0; corner(statFrame,C.CRR); stroke(statFrame,P.BORDER,1,0.4)
+local statL=lbl(statFrame,"Desync  ·  Inactif",P.FG2,C.FS_SM,GH); statL.Size=UDim2.new(1,0,1,0)
+
+-- =============================================
+--   PAGE 3 — TOOLS
+-- =============================================
+local p3=tabPages[3]; local Y3=p3pos()
+sec(p3,Y3.s1,"PROTECTION")
+local ragPill,ragKnob=mkRow(p3,Y3.r1,"Anti Ragdoll","Annule balloon / ragdoll")
+div(p3,Y3.d1); sec(p3,Y3.s2,"SILLY BOOSTER")
+
+local sillyCard=Instance.new("Frame",p3); sillyCard.Size=UDim2.new(0,C.CW,0,C.SILH); sillyCard.Position=UDim2.new(0,C.CX,0,Y3.sil)
+sillyCard.BackgroundColor3=P.CARD; sillyCard.BorderSizePixel=0; corner(sillyCard,C.CRR); stroke(sillyCard,P.BORDER,1,0.35)
+local sillySpeedLbl=lbl(sillyCard,"Speed",P.FG2,C.FS_SUB,GH,Enum.TextXAlignment.Left)
+sillySpeedLbl.Size=UDim2.new(0,50,0,C.FS_SUB+4); sillySpeedLbl.Position=UDim2.new(0,10,0,isMobile and 14 or 8)
+local sillyBox=Instance.new("TextBox",sillyCard)
+sillyBox.Size=UDim2.new(0,isMobile and 62 or 48,0,isMobile and 26 or 18)
+sillyBox.Position=UDim2.new(0,isMobile and 68 or 58,0,isMobile and 12 or 6)
+sillyBox.BackgroundColor3=P.SURFACE; sillyBox.BorderSizePixel=0; sillyBox.Text="27"; sillyBox.TextColor3=P.FG
+sillyBox.TextSize=C.FS_SM; sillyBox.Font=Enum.Font.GothamBold; sillyBox.ClearTextOnFocus=false
+corner(sillyBox,4); stroke(sillyBox,P.BORDER2,1,0.3)
+local sillyPill=Instance.new("TextButton",sillyCard); sillyPill.Size=UDim2.new(0,C.PW,0,C.PH); sillyPill.Position=UDim2.new(1,-(C.PW+8),0.5,-C.PH/2)
+sillyPill.BackgroundColor3=P.BORDER; sillyPill.Text=""; sillyPill.AutoButtonColor=false; sillyPill.BorderSizePixel=0; corner(sillyPill,C.CRPL); stroke(sillyPill,P.BORDER2,1,0.4)
+local sillyKnob=Instance.new("Frame",sillyPill); sillyKnob.Size=UDim2.new(0,C.KN,0,C.KN); sillyKnob.Position=UDim2.new(0,3,0.5,-C.KN/2); sillyKnob.BackgroundColor3=P.FG3; sillyKnob.BorderSizePixel=0; corner(sillyKnob,C.KNR)
+local sillyInfoLbl=lbl(sillyCard,"Velocity directionnelle",P.FG3,C.FS_XS,GM,Enum.TextXAlignment.Left)
+sillyInfoLbl.Size=UDim2.new(1,-(C.PW+20),0,C.FS_XS+4); sillyInfoLbl.Position=UDim2.new(0,10,0,isMobile and 48 or 34)
+
+div(p3,Y3.d2); sec(p3,Y3.s3,"KEYBIND SPAM")
+local keyCard=Instance.new("Frame",p3); keyCard.Size=UDim2.new(0,C.CW,0,C.BTN_H); keyCard.Position=UDim2.new(0,C.CX,0,Y3.key)
+keyCard.BackgroundColor3=P.CARD; keyCard.BorderSizePixel=0; corner(keyCard,C.CRR); stroke(keyCard,P.BORDER,1,0.35)
+local keyLbl=lbl(keyCard,"Touche spam :",P.FG2,C.FS_SUB,GH,Enum.TextXAlignment.Left); keyLbl.Size=UDim2.new(0,100,1,0); keyLbl.Position=UDim2.new(0,10,0,0)
+local kbW=isMobile and 76 or 60; local kbH=isMobile and 30 or 22
+local keyBtn=Instance.new("TextButton",keyCard); keyBtn.Size=UDim2.new(0,kbW,0,kbH); keyBtn.Position=UDim2.new(1,-(kbW+8),0.5,-kbH/2)
+keyBtn.BackgroundColor3=P.SURFACE; keyBtn.BorderSizePixel=0; keyBtn.Text="Q"; keyBtn.TextColor3=P.ACCENT; keyBtn.TextSize=C.FS_SM
+keyBtn.Font=Enum.Font.GothamBold; keyBtn.AutoButtonColor=false; corner(keyBtn,6); stroke(keyBtn,P.BORDER2,1,0.3)
+
+div(p3,Y3.d3); sec(p3,Y3.s4,"ESP")
+local espPill,espKnob=mkRow(p3,Y3.r2,"Player ESP","Hitbox violet + nom")
+
+-- =============================================
+--   TAB SWITCH
+-- =============================================
+local currentTab=0
+local function switchTab(idx)
+    if currentTab==idx then return end; currentTab=idx
+    for i,t in ipairs(tabBtns) do local active=(i==idx); t.bar.Visible=active; tw(t.lbl,{TextColor3=active and P.ACCENT or P.FG2}) end
+    for i,pg in ipairs(tabPages) do pg.Visible=(i==idx) end
+end
+for i,t in ipairs(tabBtns) do t.btn.MouseButton1Click:Connect(function() switchTab(i) end) end
+switchTab(1)
+
+-- =============================================
+--   LOGIQUE BOUTONS
+-- =============================================
+bAct.MouseButton1Click:Connect(function()
+    if desync then return end; bAct:SetAttribute("locked",true); bActL.Text="Preparing..."; bActL.TextColor3=P.ORANGE
+    task.spawn(function()
+        applyFFlags(); respawnPlayer(); task.wait(1.5); bActL.Text="Almost done..."
+        task.wait(1.5); desync=true; bActL.Text="✓  Active"; bActL.TextColor3=P.GREEN
+        tw(bAct,{BackgroundColor3=Color3.fromRGB(8,18,10)}); tw(bActS,{Color=P.GREEN,Transparency=0.3}); tw(dot,{BackgroundColor3=P.GREEN})
+        statL.Text="Desync  ·  Actif"; statL.TextColor3=P.GREEN
+    end)
+end)
+htPill.MouseButton1Click:Connect(function() if not desync then return end; halfTpOn=not halfTpOn; if halfTpOn then pillOn(htPill,htKnob) else pillOff(htPill,htKnob) end end)
+potPill.MouseButton1Click:Connect(function() autoPotionOn=not autoPotionOn; if autoPotionOn then pillOn(potPill,potKnob) else pillOff(potPill,potKnob) end end)
+bStl.MouseButton1Click:Connect(function()
+    if not desync then bStlL.Text="Activate first!"; bStlL.TextColor3=P.RED; task.delay(1.5,function() bStlL.Text="SEMI INSTA  [ F ]"; bStlL.TextColor3=P.FG2 end); return end
+    if IsStealing then return end; doSteal()
+end)
+ragPill.MouseButton1Click:Connect(function() ENABLE_ANTI_RAGDOLL=not ENABLE_ANTI_RAGDOLL; if ENABLE_ANTI_RAGDOLL then pillOn(ragPill,ragKnob) else pillOff(ragPill,ragKnob) end end)
+sillyBox:GetPropertyChangedSignal("Text"):Connect(function() local v=tonumber(sillyBox.Text);if v and v>0 then SILLY_SPEED=v end end)
+sillyPill.MouseButton1Click:Connect(function() sillyEnabled=not sillyEnabled; if sillyEnabled then pillOn(sillyPill,sillyKnob);startSilly() else pillOff(sillyPill,sillyKnob);stopSilly() end end)
+espPill.MouseButton1Click:Connect(function() espOn=not espOn; if espOn then pillOn(espPill,espKnob);enableESP() else pillOff(espPill,espKnob);disableESP() end end)
+
+local isListening=false
+keyBtn.MouseButton1Click:Connect(function()
+    if isListening then return end; isListening=true; keyBtn.Text="..."; keyBtn.TextColor3=P.ORANGE
+    local conn; conn=UserInputService.InputBegan:Connect(function(input,gpe)
+        if gpe then return end; spamKey=input.KeyCode; keyBtn.Text=input.KeyCode.Name; keyBtn.TextColor3=P.ACCENT; isListening=false; conn:Disconnect()
+    end)
+end)
+UserInputService.InputBegan:Connect(function(input,gpe)
+    if gpe or isListening then return end
+    if input.KeyCode==spamKey then
+        local remote=_G.s34core and _G.s34core.AdminRemote; if not remote then return end
+        local cmds=_G.spamCmds or {}
+        for _,plr in ipairs(Players:GetPlayers()) do
+            if plr~=player then
+                for _,act in ipairs({"balloon","ragdoll","jumpscare","rocket","jail","tiny","morph"}) do
+                    if cmds[act] then task.spawn(function() pcall(function() remote:InvokeServer("f888ee6e-c86d-46e1-93d7-0639d6635d42",plr,act) end) end) end
+                end
+            end
+        end
+    end
+end)
+
+-- DRAG
+do
+    local drag,ds,dp=false,nil,nil
+    topbar.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=true;ds=i.Position;dp=panel.Position end end)
+    UserInputService.InputChanged:Connect(function(i) if drag and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then local d=i.Position-ds; panel.Position=UDim2.new(dp.X.Scale,dp.X.Offset+d.X,dp.Y.Scale,dp.Y.Offset+d.Y) end end)
+    UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=false end end)
+end
+
+initScanner()
+
+-- =============================================
+--   HUD
+-- =============================================
+local topSG=Instance.new("ScreenGui",player.PlayerGui); topSG.Name="__34sTop"; topSG.ResetOnSpawn=false
+topSG.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; topSG.DisplayOrder=200
+local hud=Instance.new("Frame",topSG); hud.Size=UDim2.new(0,C.HW,0,C.HH); hud.Position=UDim2.new(0.5,-C.HW/2,0,10)
+hud.BackgroundColor3=P.SURFACE; hud.BorderSizePixel=0; corner(hud,8); stroke(hud,P.BORDER,1,0); addScanBar(hud)
+local hudTag=lbl(hud,"34s",P.ACCENT,C.FS_TTL-2,FONT_TITLE,Enum.TextXAlignment.Left); hudTag.Size=UDim2.new(0,90,1,0); hudTag.Position=UDim2.new(0,8,0,0); hudTag.ZIndex=5
+local hudDiv=Instance.new("Frame",hud); hudDiv.Size=UDim2.new(0,1,0,14); hudDiv.Position=UDim2.new(0,100,0.5,-7); hudDiv.BackgroundColor3=P.BORDER; hudDiv.BorderSizePixel=0; hudDiv.ZIndex=5
+local hudSide=lbl(hud,"--",P.FG2,C.FS_SM,GH,Enum.TextXAlignment.Left); hudSide.Size=UDim2.new(0,46,1,0); hudSide.Position=UDim2.new(0,106,0,0); hudSide.ZIndex=5
+local hudTrack=Instance.new("Frame",hud); hudTrack.Size=UDim2.new(1,-190,0,4); hudTrack.Position=UDim2.new(0,158,0.5,-2); hudTrack.BackgroundColor3=P.CARD; hudTrack.BorderSizePixel=0; corner(hudTrack,2); hudTrack.ZIndex=5
+local hudFill=Instance.new("Frame",hudTrack); hudFill.Size=UDim2.new(0,0,1,0); hudFill.BackgroundColor3=P.ACCENT; hudFill.BorderSizePixel=0; corner(hudFill,2)
+local hudPct=lbl(hud,"0%",P.FG3,C.FS_SM-1,GH,Enum.TextXAlignment.Right); hudPct.Size=UDim2.new(0,36,1,0); hudPct.Position=UDim2.new(1,-40,0,0); hudPct.ZIndex=5
+task.spawn(function()
+    while true do local p=math.clamp(StealProg,0,1); hudFill.Size=UDim2.new(p,0,1,0)
+        hudFill.BackgroundColor3=StealProg>0 and P.ACCENT or P.FG3; hudPct.Text=math.floor(p*100+0.5).."%"; hudPct.TextColor3=IsStealing and P.FG or P.FG3
+        local an=nearest();local side=getSide(an); hudSide.Text=side; hudSide.TextColor3=side=="LEFT" and P.ACCENT or side=="RIGHT" and P.GREEN or P.FG3; task.wait(0.02)
+    end
+end)
+do
+    local drag,ds,dp=false,nil,nil
+    hud.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=true;ds=i.Position;dp=hud.Position end end)
+    hud.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=false end end)
+    UserInputService.InputChanged:Connect(function(i) if drag and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then local d=i.Position-ds; hud.Position=UDim2.new(dp.X.Scale,dp.X.Offset+d.X,dp.Y.Scale,dp.Y.Offset+d.Y) end end)
+end
+
+-- =============================================
+--   WATERMARK
+-- =============================================
+local wmSG=Instance.new("ScreenGui",player.PlayerGui); wmSG.Name="__34sWM"; wmSG.ResetOnSpawn=false; wmSG.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; wmSG.DisplayOrder=9999
+local wm=Instance.new("Frame",wmSG); wm.Size=UDim2.new(0,C.WW,0,C.WH); wm.Position=UDim2.new(1,-(C.WW+10),0,10)
+wm.BackgroundColor3=P.SURFACE; wm.BorderSizePixel=0; corner(wm,7); stroke(wm,P.BORDER,1,0); addScanBar(wm)
+local wmDot=Instance.new("Frame",wm); wmDot.Size=UDim2.new(0,5,0,5); wmDot.Position=UDim2.new(0,9,0.5,-2); wmDot.BackgroundColor3=P.ACCENT; wmDot.BorderSizePixel=0; corner(wmDot,3); wmDot.ZIndex=5
+local wmTitle=lbl(wm,"34s",P.ACCENT,C.WFS,FONT_TITLE,Enum.TextXAlignment.Left); wmTitle.Size=UDim2.new(0,90,1,0); wmTitle.Position=UDim2.new(0,18,0,0); wmTitle.ZIndex=5
+local wmDiv=Instance.new("Frame",wm); wmDiv.Size=UDim2.new(0,1,0,12); wmDiv.Position=UDim2.new(0,108,0.5,-6); wmDiv.BackgroundColor3=P.BORDER; wmDiv.BorderSizePixel=0; wmDiv.ZIndex=5
+local wmFps=lbl(wm,"-- FPS",P.GREEN,C.FS_SM,GH,Enum.TextXAlignment.Left); wmFps.Size=UDim2.new(0,52,1,0); wmFps.Position=UDim2.new(0,114,0,0); wmFps.ZIndex=5
+local fpsC,fpsT=0,tick()
+RunService.RenderStepped:Connect(function()
+    fpsC+=1; local now=tick()
+    if now-fpsT>=0.5 then local fps=math.round(fpsC/(now-fpsT)); wmFps.Text=fps.." FPS"; wmFps.TextColor3=fps>=55 and P.GREEN or fps>=30 and P.ORANGE or P.RED; fpsC=0; fpsT=now end
+end)
+
+-- =============================================
+--   FLOATING STEAL PILL
+-- =============================================
+local floatSG=Instance.new("ScreenGui",player.PlayerGui); floatSG.Name="__34sFloat"; floatSG.ResetOnSpawn=false; floatSG.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; floatSG.DisplayOrder=300
+local floatBtn=Instance.new("TextButton",floatSG); floatBtn.Size=UDim2.new(0,C.FW,0,C.FH); floatBtn.Position=UDim2.new(0.5,-C.FW/2,1,C.FY)
+floatBtn.BackgroundColor3=P.CARD; floatBtn.Text=""; floatBtn.AutoButtonColor=false; floatBtn.BorderSizePixel=0; floatBtn.ZIndex=10; floatBtn.Active=true; corner(floatBtn,6)
+local floatStroke=stroke(floatBtn,P.BORDER,1,0.3)
+local floatBar=Instance.new("Frame",floatBtn); floatBar.Size=UDim2.new(0,0,0,2); floatBar.Position=UDim2.new(0,0,1,-2); floatBar.BackgroundColor3=P.ACCENT; floatBar.BorderSizePixel=0; corner(floatBar,1)
+local floatL=Instance.new("TextLabel",floatBtn); floatL.Size=UDim2.new(1,0,1,-2); floatL.BackgroundTransparency=1
+floatL.Text=isMobile and "STEAL  [TAP]" or "SEMI INSTA  [F]"; floatL.TextColor3=P.FG2; floatL.Font=Enum.Font.GothamBold; floatL.TextSize=C.FFS; floatL.TextXAlignment=Enum.TextXAlignment.Center
+task.spawn(function()
+    while floatBtn.Parent do task.wait(0.02); local p=math.clamp(StealProg,0,1); floatBar.Size=UDim2.new(p,0,0,2)
+        if IsStealing then floatL.TextColor3=P.ACCENT; tw(floatStroke,{Color=P.ACCENT,Transparency=0.1}); tw(floatBtn,{BackgroundColor3=P.ASOFT})
+        else floatL.TextColor3=P.FG2; tw(floatStroke,{Color=P.BORDER,Transparency=0.3}); tw(floatBtn,{BackgroundColor3=P.CARD}) end
+    end
+end)
+floatBtn.MouseEnter:Connect(function() tw(floatBtn,{BackgroundColor3=P.HOVER}); tw(floatStroke,{Color=P.ACCENT,Transparency=0.2}); tw(floatL,{TextColor3=P.FG}) end)
+floatBtn.MouseLeave:Connect(function() if IsStealing then return end; tw(floatBtn,{BackgroundColor3=P.CARD}); tw(floatStroke,{Color=P.BORDER,Transparency=0.3}); tw(floatL,{TextColor3=P.FG2}) end)
+floatBtn.MouseButton1Click:Connect(function() if not desync or IsStealing then return end; doSteal() end)
+do
+    local drag,ds,dp=false,nil,nil
+    floatBtn.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=true;ds=i.Position;dp=floatBtn.Position end end)
+    UserInputService.InputChanged:Connect(function(i) if drag and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then local d=i.Position-ds; floatBtn.Position=UDim2.new(dp.X.Scale,dp.X.Offset+d.X,dp.Y.Scale,dp.Y.Offset+d.Y) end end)
+    UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then drag=false end end)
+end
+
+-- =============================================
+--   COMMANDES SPAM
+-- =============================================
+_G.spamCmds={balloon=true,ragdoll=true,jumpscare=true,rocket=true,jail=true,tiny=true,morph=true}
+
+-- =============================================
+--   34S ANTI-STEAL
+-- =============================================
+do
+local stats_34s=game:GetService("Stats")
+_G.s34core={Mode="None",BorderKick=false,MyPlot=nil,StealHitbox=nil,CarpetSpammedPlayers={},AdminRemote=nil,LastPunishTime={},TpProtector=false,PlayerPositions={},TpProtectorCooldowns={}}
+local core=_G.s34core
+local CARPET={["Flying Carpet"]=true,["Witch's Broom"]=true,["Santa's Sleigh"]=true}
+local function s34_fireAdmin(a,b,c2) if not core.AdminRemote then return end; task.spawn(function() pcall(function() core.AdminRemote:InvokeServer(a,b,c2) end) end) end
+local function s34_punish(p)
+    if not core.AdminRemote or not p or p==player then return end
+    local char=p.Character;if not char then return end; local hrp=char:FindFirstChild("HumanoidRootPart");if not hrp then return end
+    local uid=p.UserId; if core.LastPunishTime[uid] and tick()-core.LastPunishTime[uid]<2 then return end
+    core.LastPunishTime[uid]=tick(); hrp.CFrame=CFrame.new(0,10000,0)
+    local cmds=_G.spamCmds or {}; local ALL_ACTS={"balloon","ragdoll","jumpscare","rocket","jail","tiny","morph"}
+    if core.Mode=="Kick" then
+        for _,act in ipairs(ALL_ACTS) do if cmds[act] then s34_fireAdmin("f888ee6e-c86d-46e1-93d7-0639d6635d42",p,act) end end
+        task.delay(0.3,function() player:Kick("kicked") end)
+    elseif core.Mode=="NoKick" then
+        for _,act in ipairs(ALL_ACTS) do if cmds[act] then s34_fireAdmin("f888ee6e-c86d-46e1-93d7-0639d6635d42",p,act) end end
+    end
+end
+local function s34_hitboxCheck()
+    local hitbox=core.StealHitbox;if not hitbox then return end; local cf,size=hitbox.CFrame,hitbox.Size; local hx,hz=size.X*0.5,size.Z*0.5
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p~=player then local char=p.Character; if char then local hrp=char:FindFirstChild("HumanoidRootPart"); if hrp then local rel=cf:PointToObjectSpace(hrp.Position); if math.abs(rel.X)<=hx and math.abs(rel.Z)<=hz then for _,item in ipairs(char:GetChildren()) do if CARPET[item.Name] then s34_punish(p);break end end end end end end
+    end
+end
+local s34_pingLbl=nil
+task.spawn(function()
+    if not player.Character then player.CharacterAdded:Wait() end; task.wait(1)
+    local net=game:GetService("ReplicatedStorage"):WaitForChild("Packages"):WaitForChild("Net"); local ch=net:GetChildren(); local byIdx,byName={},{}
+    for i,obj in ipairs(ch) do byIdx[i]=obj;byName[obj.Name]=i end
+    local aIdx=byName["RF/a0e78691-cb9b-4efc-ac08-9c06fea70059"]; if aIdx then local actual=byIdx[aIdx+1];if actual then core.AdminRemote=actual end end
+    for _,obj in ipairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+        if obj:IsA("RemoteEvent") then obj.OnClientEvent:Connect(function(...)
+            if core.Mode=="None" or not core.AdminRemote or not core.MyPlot then return end
+            for _,a in ipairs({...}) do
+                if type(a)=="string" and a:lower():find("stealing") then
+                    local myHRP=player.Character and player.Character:FindFirstChild("HumanoidRootPart"); if not myHRP then return end
+                    local best,bestDist=nil,math.huge
+                    for _,p in ipairs(Players:GetPlayers()) do if p~=player then local c2=p.Character; if c2 then local h2=c2:FindFirstChild("HumanoidRootPart"); if h2 then local d=(h2.Position-myHRP.Position).Magnitude; if d<bestDist then bestDist=d;best=p end end end end end
+                    if best then s34_punish(best) end; return
+                end
+            end
+        end) end
+    end
+end)
+task.spawn(function()
+    if hookfunction and fireproximityprompt then
+        local old=fireproximityprompt
+        hookfunction(fireproximityprompt,newcclosure(function(prompt,...)
+            if core.Mode~="None" then
+                local at=(prompt.ActionText or ""):lower();local ot=(prompt.ObjectText or ""):lower()
+                if at:find("steal") or ot:find("steal") then
+                    local part=prompt.Parent; if part and part:IsA("BasePart") then
+                        local best,bestD=nil,math.huge
+                        for _,p in ipairs(Players:GetPlayers()) do if p~=player then local c2=p.Character;if c2 then local h2=c2:FindFirstChild("HumanoidRootPart");if h2 then local d=(h2.Position-part.Position).Magnitude;if d<bestD then bestD=d;best=p end end end end end
+                        if best and bestD<20 then s34_punish(best) end
+                    end; s34_hitboxCheck()
+                end
+            end; return old(prompt,...)
+        end))
+    end
+end)
+task.spawn(function()
+    while task.wait(0.5) do
+        local plots=workspace:FindFirstChild("Plots")
+        if plots and not core.MyPlot then
+            for _,p in ipairs(plots:GetChildren()) do
+                local sign=p:FindFirstChild("PlotSign"); if sign then local lb2=sign:FindFirstChild("TextLabel",true); if lb2 then local t=lb2.Text:lower(); if t:find(player.Name:lower()) or t:find(player.DisplayName:lower()) then core.MyPlot=p;core.StealHitbox=p:FindFirstChild("StealHitbox",true);break end end end
+            end
+        end
+        if s34_pingLbl then local ping=math.floor(stats_34s.Network.ServerStatsItem["Data Ping"]:GetValue()); local safe=ping<=150; s34_pingLbl.Text="PING  "..(safe and "SAFE" or "HIGH").."  ("..ping.." ms)"; s34_pingLbl.TextColor3=safe and P.GREEN or P.RED end
+    end
+end)
+RunService.Heartbeat:Connect(function()
+    if core.BorderKick and core.StealHitbox and core.AdminRemote then
+        local cf2,size2=core.StealHitbox.CFrame,core.StealHitbox.Size; local hx2,hz2=size2.X*0.5,size2.Z*0.5
+        for _,p in ipairs(Players:GetPlayers()) do if p~=player then local c2=p.Character;if c2 then local h2=c2:FindFirstChild("HumanoidRootPart");if h2 then local rel=cf2:PointToObjectSpace(h2.Position); if math.abs(rel.X)<=hx2 and math.abs(rel.Z)<=hz2 then for _,item in ipairs(c2:GetChildren()) do if CARPET[item.Name] then local uid=p.UserId; if not core.CarpetSpammedPlayers[uid] then core.CarpetSpammedPlayers[uid]=true; local cmds=_G.spamCmds or {}; for _,act in ipairs({"balloon","ragdoll","jumpscare","rocket","jail","tiny","morph"}) do if cmds[act] then s34_fireAdmin("f888ee6e-c86d-46e1-93d7-0639d6635d42",p,act) end end; task.delay(5,function() core.CarpetSpammedPlayers[uid]=nil end) end; break end end end end end end end end
+    if core.TpProtector and core.AdminRemote then
+        for _,p in ipairs(Players:GetPlayers()) do if p~=player then local c2=p.Character;if c2 then local h2=c2:FindFirstChild("HumanoidRootPart");if h2 then local cur=h2.Position;local uid=p.UserId;local last=core.PlayerPositions[uid]; if last and (cur-last).Magnitude>7 then for _,item in ipairs(c2:GetChildren()) do if CARPET[item.Name] then if not core.TpProtectorCooldowns[uid] or tick()-core.TpProtectorCooldowns[uid]>3 then core.TpProtectorCooldowns[uid]=tick(); local cmds=_G.spamCmds or {}; for _,act in ipairs({"balloon","ragdoll","jumpscare","rocket","jail","tiny","morph"}) do if cmds[act] then s34_fireAdmin("f888ee6e-c86d-46e1-93d7-0639d6635d42",p,act) end end end; break end end end; core.PlayerPositions[uid]=cur end end end end end
+end)
+
+-- GUI ANTI-STEAL
+local as_sg=Instance.new("ScreenGui"); as_sg.Name="__34sAntiSteal"; as_sg.ResetOnSpawn=false; as_sg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; as_sg.DisplayOrder=997; as_sg.Parent=player.PlayerGui
+local as_frame=Instance.new("Frame"); as_frame.Size=UDim2.new(0,260,0,242); as_frame.Position=UDim2.new(0.5,-130,0.5,-140); as_frame.BackgroundColor3=P.BG; as_frame.BorderSizePixel=0; as_frame.ClipsDescendants=true; as_frame.Active=true; as_frame.Parent=as_sg; corner(as_frame,10)
+local as_st=Instance.new("UIStroke",as_frame); as_st.Color=P.ACCENT; as_st.Thickness=1; as_st.Transparency=0.6
+task.spawn(function() local t=0; while as_frame.Parent do t+=0.05;as_st.Transparency=0.55+0.4*math.abs(math.sin(t));task.wait(0.03) end end)
+local as_hdr=Instance.new("Frame",as_frame); as_hdr.Size=UDim2.new(1,0,0,46); as_hdr.BackgroundColor3=P.SURFACE; as_hdr.BorderSizePixel=0; as_hdr.ZIndex=3; corner(as_hdr,10); addScanBar(as_hdr)
+local as_hp=Instance.new("Frame",as_hdr); as_hp.Size=UDim2.new(1,0,0,10); as_hp.Position=UDim2.new(0,0,1,-10); as_hp.BackgroundColor3=P.SURFACE; as_hp.BorderSizePixel=0; as_hp.ZIndex=3
+local as_hl=Instance.new("Frame",as_hdr); as_hl.Size=UDim2.new(1,-24,0,1); as_hl.Position=UDim2.new(0,12,1,0); as_hl.BackgroundColor3=P.BORDER; as_hl.BorderSizePixel=0; as_hl.ZIndex=4; corner(as_hl,1)
+local as_hlg=Instance.new("UIGradient",as_hl); as_hlg.Color=ColorSequence.new({ColorSequenceKeypoint.new(0,P.BG),ColorSequenceKeypoint.new(0.2,P.FG),ColorSequenceKeypoint.new(0.8,P.FG),ColorSequenceKeypoint.new(1,P.BG)})
+local as_dot=Instance.new("Frame",as_hdr); as_dot.Size=UDim2.new(0,4,0,16); as_dot.Position=UDim2.new(0,14,0.5,-8); as_dot.BackgroundColor3=P.ACCENT; as_dot.BorderSizePixel=0; as_dot.ZIndex=5; corner(as_dot,2)
+local as_ttl=Instance.new("TextLabel",as_hdr); as_ttl.Size=UDim2.new(1,-80,0.6,0); as_ttl.Position=UDim2.new(0,26,0,4); as_ttl.BackgroundTransparency=1; as_ttl.Text="34s"; as_ttl.TextColor3=P.ACCENT; as_ttl.TextSize=16; as_ttl.FontFace=FONT_TITLE; as_ttl.TextXAlignment=Enum.TextXAlignment.Left; as_ttl.ZIndex=5
+local as_plbl=Instance.new("TextLabel",as_hdr); as_plbl.Size=UDim2.new(1,-80,0,18); as_plbl.Position=UDim2.new(0,26,0,24); as_plbl.BackgroundTransparency=1; as_plbl.Text="PING  SAFE  (-- ms)"; as_plbl.TextColor3=P.GREEN; as_plbl.TextSize=13; as_plbl.FontFace=FONT_TITLE; as_plbl.TextXAlignment=Enum.TextXAlignment.Left; as_plbl.ZIndex=5; s34_pingLbl=as_plbl
+local as_cls=Instance.new("TextButton",as_hdr); as_cls.Size=UDim2.new(0,26,0,26); as_cls.Position=UDim2.new(1,-34,0.5,-13); as_cls.BackgroundColor3=P.SURFACE; as_cls.BorderSizePixel=0; as_cls.Text="×"; as_cls.TextColor3=P.FG2; as_cls.TextSize=16; as_cls.Font=Enum.Font.GothamBlack; as_cls.ZIndex=6; corner(as_cls,6); stroke(as_cls,P.BORDER2,1,0.4)
+local as_min=Instance.new("TextButton",as_hdr); as_min.Size=UDim2.new(0,26,0,26); as_min.Position=UDim2.new(1,-64,0.5,-13); as_min.BackgroundColor3=P.SURFACE; as_min.BorderSizePixel=0; as_min.Text="−"; as_min.TextColor3=P.FG2; as_min.TextSize=16; as_min.Font=Enum.Font.GothamBlack; as_min.ZIndex=6; corner(as_min,6); stroke(as_min,P.BORDER2,1,0.4)
+as_cls.MouseEnter:Connect(function() tw(as_cls,{BackgroundColor3=P.RED,TextColor3=P.FG}) end); as_cls.MouseLeave:Connect(function() tw(as_cls,{BackgroundColor3=P.SURFACE,TextColor3=P.FG2}) end); as_cls.MouseButton1Click:Connect(function() as_sg.Enabled=false end)
+local as_minimized=false
+as_min.MouseEnter:Connect(function() tw(as_min,{BackgroundColor3=P.HOVER,TextColor3=P.FG}) end); as_min.MouseLeave:Connect(function() tw(as_min,{BackgroundColor3=P.SURFACE,TextColor3=P.FG2}) end)
+as_min.MouseButton1Click:Connect(function() as_minimized=not as_minimized;as_min.Text=as_minimized and "+" or "−"; TweenService:Create(as_frame,TweenInfo.new(0.25,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{Size=UDim2.new(0,260,0,as_minimized and 46 or 242)}):Play() end)
+local as_scroll=Instance.new("ScrollingFrame",as_frame); as_scroll.Position=UDim2.new(0,8,0,52); as_scroll.Size=UDim2.new(1,-16,1,-60); as_scroll.BackgroundTransparency=1; as_scroll.BorderSizePixel=0; as_scroll.CanvasSize=UDim2.new(0,0,0,0); as_scroll.AutomaticCanvasSize=Enum.AutomaticSize.Y; as_scroll.ScrollBarThickness=3; as_scroll.ScrollBarImageColor3=P.BORDER; as_scroll.ScrollingDirection=Enum.ScrollingDirection.Y
+local as_ll=Instance.new("UIListLayout",as_scroll); as_ll.Padding=UDim.new(0,5); as_ll.HorizontalAlignment=Enum.HorizontalAlignment.Center; as_ll.SortOrder=Enum.SortOrder.LayoutOrder
+Instance.new("UIPadding",as_scroll).PaddingTop=UDim.new(0,4)
+local as_tstates={Kick=false,NoKick=false,Protector=false,TpProtector=false}; local as_tdots={}
+local function as_setVisual(key,state) local d=as_tdots[key];if not d then return end; TweenService:Create(d,TweenInfo.new(0.15,Enum.EasingStyle.Back),{Position=state and UDim2.new(1,-15,0.5,-6) or UDim2.new(0,3,0.5,-6),BackgroundColor3=state and P.ACCENT or P.BORDER}):Play() end
+local AS_COL={Kick=P.RED,NoKick=P.GREEN,Protector=P.ORANGE,TpProtector=P.ACCENT}
+local function as_makeToggle(txt,order,key)
+    local row=Instance.new("TextButton",as_scroll); row.LayoutOrder=order; row.Size=UDim2.new(1,-4,0,38); row.BackgroundColor3=P.CARD; row.BorderSizePixel=0; row.Text=""; row.ZIndex=2; corner(row,7)
+    local rs=Instance.new("UIStroke",row); rs.Color=P.BORDER; rs.Thickness=1; rs.Transparency=0.4
+    local lb2=Instance.new("TextLabel",row); lb2.Position=UDim2.new(0,10,0,0); lb2.Size=UDim2.new(1,-55,1,0); lb2.BackgroundTransparency=1; lb2.Text=txt; lb2.TextColor3=P.FG2; lb2.TextSize=10; lb2.Font=Enum.Font.GothamBold; lb2.TextXAlignment=Enum.TextXAlignment.Left; lb2.ZIndex=3
+    local track=Instance.new("Frame",row); track.Position=UDim2.new(1,-44,0.5,-9); track.Size=UDim2.new(0,34,0,18); track.BackgroundColor3=P.BORDER; track.BorderSizePixel=0; track.ZIndex=3; Instance.new("UICorner",track).CornerRadius=UDim.new(1,0)
+    local knob=Instance.new("Frame",track); knob.Position=UDim2.new(0,3,0.5,-6); knob.Size=UDim2.new(0,12,0,12); knob.BackgroundColor3=P.BORDER; knob.BorderSizePixel=0; knob.ZIndex=4; corner(knob,6); as_tdots[key]=knob
+    row.MouseEnter:Connect(function() TweenService:Create(row,TweenInfo.new(0.1),{BackgroundColor3=P.HOVER}):Play(); TweenService:Create(lb2,TweenInfo.new(0.1),{TextColor3=P.FG}):Play() end)
+    row.MouseLeave:Connect(function() TweenService:Create(row,TweenInfo.new(0.1),{BackgroundColor3=P.CARD}):Play(); TweenService:Create(lb2,TweenInfo.new(0.1),{TextColor3=as_tstates[key] and P.FG or P.FG2}):Play() end)
+    local db=false
+    row.MouseButton1Click:Connect(function()
+        if db then return end; db=true; local on=not as_tstates[key]; as_tstates[key]=on
+        if key=="Kick" then if on then core.Mode="Kick";as_tstates["NoKick"]=false;as_setVisual("NoKick",false) else core.Mode="None" end
+        elseif key=="NoKick" then if on then core.Mode="NoKick";as_tstates["Kick"]=false;as_setVisual("Kick",false) else core.Mode="None" end
+        elseif key=="Protector" then core.BorderKick=on
+        elseif key=="TpProtector" then core.TpProtector=on end
+        as_setVisual(key,on); TweenService:Create(track,TweenInfo.new(0.15),{BackgroundColor3=on and P.ASOFT or P.BORDER}):Play(); TweenService:Create(rs,TweenInfo.new(0.15),{Color=on and AS_COL[key] or P.BORDER,Transparency=on and 0.2 or 0.4}):Play(); TweenService:Create(lb2,TweenInfo.new(0.1),{TextColor3=on and P.FG or P.FG2}):Play()
+        task.delay(0.2,function() db=false end)
+    end)
+end
+as_makeToggle("SPAM SI VOL  (AVEC KICK)",0,"Kick"); as_makeToggle("SPAM SI VOL  (SANS KICK)",1,"NoKick"); as_makeToggle("TP PROTECTOR",2,"TpProtector")
+local as_prows={}
+local function as_addRow(p)
+    if p==player or as_prows[p.UserId] then return end
+    local prow=Instance.new("Frame",as_scroll); prow.LayoutOrder=1000000+p.UserId%100000; prow.Size=UDim2.new(1,-4,0,48); prow.BackgroundColor3=P.CARD; prow.BorderSizePixel=0; corner(prow,7)
+    local ps=Instance.new("UIStroke",prow); ps.Color=P.BORDER; ps.Thickness=1; ps.Transparency=0.5
+    local av=Instance.new("ImageLabel",prow); av.Position=UDim2.new(0,8,0.5,-16); av.Size=UDim2.new(0,32,0,32); av.BackgroundTransparency=1; av.Image="rbxthumb://type=AvatarHeadShot&id="..p.UserId.."&w=150&h=150"; corner(av,1); Instance.new("UICorner",av).CornerRadius=UDim.new(1,0)
+    local nl=Instance.new("TextLabel",prow); nl.Position=UDim2.new(0,46,0,8); nl.Size=UDim2.new(1,-120,0,16); nl.BackgroundTransparency=1; nl.Text=p.Name; nl.TextColor3=P.FG; nl.TextSize=11; nl.Font=Enum.Font.GothamBold; nl.TextXAlignment=Enum.TextXAlignment.Left
+    local rl=Instance.new("TextLabel",prow); rl.Position=UDim2.new(0,46,0,26); rl.Size=UDim2.new(1,-120,0,12); rl.BackgroundTransparency=1; rl.Text="Joueur"; rl.TextColor3=P.FG2; rl.TextSize=9; rl.Font=Enum.Font.Gotham; rl.TextXAlignment=Enum.TextXAlignment.Left
+    local sb2=Instance.new("TextButton",prow); sb2.Position=UDim2.new(1,-66,0.5,-11); sb2.Size=UDim2.new(0,58,0,22); sb2.BackgroundColor3=P.SURFACE; sb2.BorderSizePixel=0; sb2.Text="SPAM"; sb2.TextColor3=P.FG2; sb2.TextSize=10; sb2.Font=Enum.Font.GothamBold; sb2.AutoButtonColor=false; corner(sb2,6)
+    local sb2s=Instance.new("UIStroke",sb2); sb2s.Color=P.BORDER; sb2s.Thickness=1; sb2s.Transparency=0.4
+    sb2.MouseEnter:Connect(function() TweenService:Create(sb2,TweenInfo.new(0.1),{BackgroundColor3=P.HOVER,TextColor3=P.FG}):Play() end); sb2.MouseLeave:Connect(function() TweenService:Create(sb2,TweenInfo.new(0.1),{BackgroundColor3=P.SURFACE,TextColor3=P.FG2}):Play() end)
+    sb2.MouseButton1Click:Connect(function()
+        if not core.AdminRemote then return end; local cmds=_G.spamCmds or {}
+        for _,act in ipairs({"balloon","ragdoll","jumpscare","rocket","jail","tiny","morph"}) do if cmds[act] then s34_fireAdmin("f888ee6e-c86d-46e1-93d7-0639d6635d42",p,act) end end
+        s34_punish(p); TweenService:Create(sb2,TweenInfo.new(0.1),{BackgroundColor3=P.HOVER,TextColor3=P.FG}):Play()
+        task.delay(1,function() TweenService:Create(sb2,TweenInfo.new(0.2),{BackgroundColor3=P.SURFACE,TextColor3=P.FG2}):Play() end)
+    end); as_prows[p.UserId]=prow
+end
+local function as_removeRow(p) if as_prows[p.UserId] then as_prows[p.UserId]:Destroy();as_prows[p.UserId]=nil end end
+for _,p in ipairs(Players:GetPlayers()) do as_addRow(p) end; Players.PlayerAdded:Connect(as_addRow); Players.PlayerRemoving:Connect(as_removeRow)
+do
+    local d,ds,dp=false,nil,nil
+    as_hdr.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then d=true;ds=i.Position;dp=as_frame.Position end end)
+    as_hdr.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then d=false end end)
+    UserInputService.InputChanged:Connect(function(i) if d and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then local delta=i.Position-ds; as_frame.Position=UDim2.new(dp.X.Scale,dp.X.Offset+delta.X,dp.Y.Scale,dp.Y.Offset+delta.Y) end end)
+end
+end
+
+-- =============================================
+--   SPAM MENU
+-- =============================================
+do
+local SP_ALL={"balloon","ragdoll","jumpscare","rocket","jail","tiny","morph"}
+local SP_COL={balloon=P.FG,ragdoll=P.GREEN,jumpscare=P.ORANGE,rocket=P.RED,jail=Color3.fromRGB(170,130,255),tiny=Color3.fromRGB(100,200,255),morph=Color3.fromRGB(255,160,80)}
+local function sp_count() local n=0;for _,a in ipairs(SP_ALL) do if _G.spamCmds[a] then n+=1 end end;return n end
+local sp_sg=Instance.new("ScreenGui"); sp_sg.Name="__34sSpam"; sp_sg.ResetOnSpawn=false; sp_sg.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; sp_sg.DisplayOrder=998; sp_sg.Parent=player.PlayerGui
+local SP_H=340
+local sp_frame=Instance.new("Frame"); sp_frame.Size=UDim2.new(0,240,0,SP_H); sp_frame.Position=UDim2.new(0.5,150,0.5,-140); sp_frame.BackgroundColor3=P.BG; sp_frame.BorderSizePixel=0; sp_frame.ClipsDescendants=true; sp_frame.Active=true; sp_frame.Parent=sp_sg; corner(sp_frame,10)
+local sp_st=Instance.new("UIStroke",sp_frame); sp_st.Color=P.ACCENT; sp_st.Thickness=1; sp_st.Transparency=0.6
+task.spawn(function() local t=0;while sp_frame.Parent do t+=0.05;sp_st.Transparency=0.55+0.4*math.abs(math.sin(t));task.wait(0.03) end end)
+local sp_hdr=Instance.new("Frame",sp_frame); sp_hdr.Size=UDim2.new(1,0,0,42); sp_hdr.BackgroundColor3=P.SURFACE; sp_hdr.BorderSizePixel=0; sp_hdr.ZIndex=3; corner(sp_hdr,10); addScanBar(sp_hdr)
+local sp_hp=Instance.new("Frame",sp_hdr); sp_hp.Size=UDim2.new(1,0,0,10); sp_hp.Position=UDim2.new(0,0,1,-10); sp_hp.BackgroundColor3=P.SURFACE; sp_hp.BorderSizePixel=0; sp_hp.ZIndex=3
+local sp_hl=Instance.new("Frame",sp_hdr); sp_hl.Size=UDim2.new(1,-24,0,1); sp_hl.Position=UDim2.new(0,12,1,0); sp_hl.BackgroundColor3=P.BORDER; sp_hl.BorderSizePixel=0; sp_hl.ZIndex=4; corner(sp_hl,1)
+local sp_hlg=Instance.new("UIGradient",sp_hl); sp_hlg.Color=ColorSequence.new({ColorSequenceKeypoint.new(0,P.BG),ColorSequenceKeypoint.new(0.2,P.FG),ColorSequenceKeypoint.new(0.8,P.FG),ColorSequenceKeypoint.new(1,P.BG)})
+local sp_dot=Instance.new("Frame",sp_hdr); sp_dot.Size=UDim2.new(0,4,0,14); sp_dot.Position=UDim2.new(0,14,0.5,-7); sp_dot.BackgroundColor3=P.ACCENT; sp_dot.BorderSizePixel=0; sp_dot.ZIndex=5; corner(sp_dot,2)
+local sp_ttl=Instance.new("TextLabel",sp_hdr); sp_ttl.Size=UDim2.new(1,-80,1,0); sp_ttl.Position=UDim2.new(0,26,0,0); sp_ttl.BackgroundTransparency=1; sp_ttl.Text="34s"; sp_ttl.TextColor3=P.ACCENT; sp_ttl.TextSize=18; sp_ttl.FontFace=FONT_TITLE; sp_ttl.TextXAlignment=Enum.TextXAlignment.Left; sp_ttl.ZIndex=5
+local sp_cls=Instance.new("TextButton",sp_hdr); sp_cls.Size=UDim2.new(0,24,0,24); sp_cls.Position=UDim2.new(1,-30,0.5,-12); sp_cls.BackgroundColor3=P.SURFACE; sp_cls.BorderSizePixel=0; sp_cls.Text="×"; sp_cls.TextColor3=P.FG2; sp_cls.TextSize=15; sp_cls.Font=Enum.Font.GothamBlack; sp_cls.ZIndex=6; corner(sp_cls,6); stroke(sp_cls,P.BORDER2,1,0.4)
+local sp_minbtn=Instance.new("TextButton",sp_hdr); sp_minbtn.Size=UDim2.new(0,24,0,24); sp_minbtn.Position=UDim2.new(1,-58,0.5,-12); sp_minbtn.BackgroundColor3=P.SURFACE; sp_minbtn.BorderSizePixel=0; sp_minbtn.Text="−"; sp_minbtn.TextColor3=P.FG2; sp_minbtn.TextSize=15; sp_minbtn.Font=Enum.Font.GothamBlack; sp_minbtn.ZIndex=6; corner(sp_minbtn,6); stroke(sp_minbtn,P.BORDER2,1,0.4)
+sp_cls.MouseEnter:Connect(function() tw(sp_cls,{BackgroundColor3=P.RED,TextColor3=P.FG}) end); sp_cls.MouseLeave:Connect(function() tw(sp_cls,{BackgroundColor3=P.SURFACE,TextColor3=P.FG2}) end); sp_cls.MouseButton1Click:Connect(function() sp_sg.Enabled=false end)
+local sp_mini=false; sp_minbtn.MouseEnter:Connect(function() tw(sp_minbtn,{BackgroundColor3=P.HOVER,TextColor3=P.FG}) end); sp_minbtn.MouseLeave:Connect(function() tw(sp_minbtn,{BackgroundColor3=P.SURFACE,TextColor3=P.FG2}) end)
+sp_minbtn.MouseButton1Click:Connect(function() sp_mini=not sp_mini;sp_minbtn.Text=sp_mini and "+" or "−"; TweenService:Create(sp_frame,TweenInfo.new(0.25,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{Size=UDim2.new(0,240,0,sp_mini and 42 or SP_H)}):Play() end)
+local sp_scroll=Instance.new("ScrollingFrame",sp_frame); sp_scroll.Position=UDim2.new(0,8,0,48); sp_scroll.Size=UDim2.new(1,-16,1,-56); sp_scroll.BackgroundTransparency=1; sp_scroll.BorderSizePixel=0; sp_scroll.CanvasSize=UDim2.new(0,0,0,0); sp_scroll.AutomaticCanvasSize=Enum.AutomaticSize.Y; sp_scroll.ScrollBarThickness=3; sp_scroll.ScrollBarImageColor3=P.BORDER; sp_scroll.ScrollingDirection=Enum.ScrollingDirection.Y
+local sp_ll=Instance.new("UIListLayout",sp_scroll); sp_ll.Padding=UDim.new(0,4); sp_ll.HorizontalAlignment=Enum.HorizontalAlignment.Center; sp_ll.SortOrder=Enum.SortOrder.LayoutOrder
+Instance.new("UIPadding",sp_scroll).PaddingTop=UDim.new(0,4)
+local sp_cmdBar=Instance.new("Frame",sp_scroll); sp_cmdBar.LayoutOrder=0; sp_cmdBar.Size=UDim2.new(1,-4,0,30); sp_cmdBar.BackgroundColor3=P.CARD; sp_cmdBar.BorderSizePixel=0; corner(sp_cmdBar,7); stroke(sp_cmdBar,P.BORDER,1,0.35)
+local sp_cmdLbl=Instance.new("TextLabel",sp_cmdBar); sp_cmdLbl.Size=UDim2.new(1,-50,1,0); sp_cmdLbl.Position=UDim2.new(0,10,0,0); sp_cmdLbl.BackgroundTransparency=1; sp_cmdLbl.Text="CMDS  ·  7/7 actives"; sp_cmdLbl.TextColor3=P.FG2; sp_cmdLbl.TextSize=9; sp_cmdLbl.Font=Enum.Font.GothamBold; sp_cmdLbl.TextXAlignment=Enum.TextXAlignment.Left
+local sp_gearBtn=Instance.new("TextButton",sp_cmdBar); sp_gearBtn.Size=UDim2.new(0,24,0,20); sp_gearBtn.Position=UDim2.new(1,-30,0.5,-10); sp_gearBtn.BackgroundColor3=P.SURFACE; sp_gearBtn.BorderSizePixel=0; sp_gearBtn.Text="⚙"; sp_gearBtn.TextColor3=P.FG2; sp_gearBtn.TextSize=12; sp_gearBtn.Font=Enum.Font.GothamBlack; sp_gearBtn.AutoButtonColor=false; corner(sp_gearBtn,6); stroke(sp_gearBtn,P.BORDER2,1,0.35)
+sp_gearBtn.MouseEnter:Connect(function() tw(sp_gearBtn,{BackgroundColor3=P.HOVER,TextColor3=P.FG}) end); sp_gearBtn.MouseLeave:Connect(function() tw(sp_gearBtn,{BackgroundColor3=P.SURFACE,TextColor3=P.FG2}) end)
+local sp_popup=Instance.new("Frame",sp_frame); sp_popup.Size=UDim2.new(1,-16,0,270); sp_popup.Position=UDim2.new(0,8,0,44); sp_popup.BackgroundColor3=P.CARD; sp_popup.BorderSizePixel=0; sp_popup.ZIndex=60; sp_popup.Visible=false; sp_popup.ClipsDescendants=true; corner(sp_popup,9); stroke(sp_popup,P.BORDER2,1,0.1); addScanBar(sp_popup)
+local sp_ph=Instance.new("Frame",sp_popup); sp_ph.Size=UDim2.new(1,0,0,28); sp_ph.BackgroundColor3=P.SURFACE; sp_ph.BorderSizePixel=0; sp_ph.ZIndex=62; corner(sp_ph,9)
+local sp_phpatch=Instance.new("Frame",sp_ph); sp_phpatch.Size=UDim2.new(1,0,0,8); sp_phpatch.Position=UDim2.new(0,0,1,-8); sp_phpatch.BackgroundColor3=P.SURFACE; sp_phpatch.BorderSizePixel=0; sp_phpatch.ZIndex=62
+local sp_ptitle=Instance.new("TextLabel",sp_ph); sp_ptitle.Size=UDim2.new(1,-40,1,0); sp_ptitle.Position=UDim2.new(0,12,0,0); sp_ptitle.BackgroundTransparency=1; sp_ptitle.Text="RÉGLAGES SPAM"; sp_ptitle.TextColor3=P.FG2; sp_ptitle.TextSize=9; sp_ptitle.Font=Enum.Font.GothamBlack; sp_ptitle.TextXAlignment=Enum.TextXAlignment.Left; sp_ptitle.ZIndex=63
+local sp_pclose=Instance.new("TextButton",sp_ph); sp_pclose.Size=UDim2.new(0,18,0,18); sp_pclose.Position=UDim2.new(1,-24,0.5,-9); sp_pclose.BackgroundColor3=P.CARD; sp_pclose.BorderSizePixel=0; sp_pclose.Text="×"; sp_pclose.TextColor3=P.FG2; sp_pclose.TextSize=12; sp_pclose.Font=Enum.Font.GothamBlack; sp_pclose.AutoButtonColor=false; sp_pclose.ZIndex=63; corner(sp_pclose,5); stroke(sp_pclose,P.BORDER,1,0.4)
+sp_pclose.MouseEnter:Connect(function() tw(sp_pclose,{BackgroundColor3=P.RED,TextColor3=P.FG}) end); sp_pclose.MouseLeave:Connect(function() tw(sp_pclose,{BackgroundColor3=P.CARD,TextColor3=P.FG2}) end)
+local sp_updateSummary; local sp_checkboxes={}
+for idx,act in ipairs(SP_ALL) do
+    local col=SP_COL[act] or P.FG2; local yp=30+(idx-1)*32
+    local row=Instance.new("TextButton",sp_popup); row.Size=UDim2.new(1,-16,0,26); row.Position=UDim2.new(0,8,0,yp); row.BackgroundColor3=P.SURFACE; row.BorderSizePixel=0; row.Text=""; row.AutoButtonColor=false; row.ZIndex=61; corner(row,6)
+    local rs=Instance.new("UIStroke",row); rs.Color=P.BORDER2; rs.Thickness=1; rs.Transparency=0.5; rs.ZIndex=61
+    local box=Instance.new("Frame",row); box.Size=UDim2.new(0,13,0,13); box.Position=UDim2.new(0,7,0.5,-6); box.BackgroundColor3=col; box.BorderSizePixel=0; box.ZIndex=62; corner(box,3)
+    local chk=Instance.new("TextLabel",box); chk.Size=UDim2.new(1,0,1,0); chk.BackgroundTransparency=1; chk.Text="✓"; chk.TextColor3=P.BG; chk.TextSize=9; chk.Font=Enum.Font.GothamBlack; chk.ZIndex=63
+    local lb2=Instance.new("TextLabel",row); lb2.Size=UDim2.new(1,-34,1,0); lb2.Position=UDim2.new(0,26,0,0); lb2.BackgroundTransparency=1; lb2.Text=act:upper(); lb2.TextColor3=col; lb2.TextSize=10; lb2.Font=Enum.Font.GothamBold; lb2.TextXAlignment=Enum.TextXAlignment.Left; lb2.ZIndex=62
+    sp_checkboxes[act]={row=row,box=box,chk=chk,lbl=lb2,stroke=rs,col=col}
+    local function refresh() local on=_G.spamCmds[act]; TweenService:Create(box,TweenInfo.new(0.12),{BackgroundColor3=on and col or P.BORDER2}):Play(); chk.Visible=on; TweenService:Create(lb2,TweenInfo.new(0.12),{TextColor3=on and col or P.FG3}):Play(); TweenService:Create(rs,TweenInfo.new(0.12),{Color=on and col or P.BORDER2,Transparency=on and 0.3 or 0.5}):Play(); if sp_updateSummary then sp_updateSummary() end end
+    refresh(); row.MouseEnter:Connect(function() TweenService:Create(row,TweenInfo.new(0.1),{BackgroundColor3=P.HOVER}):Play() end); row.MouseLeave:Connect(function() TweenService:Create(row,TweenInfo.new(0.1),{BackgroundColor3=P.SURFACE}):Play() end)
+    row.MouseButton1Click:Connect(function() _G.spamCmds[act]=not _G.spamCmds[act];refresh() end)
+end
+sp_updateSummary=function() local n=sp_count(); sp_cmdLbl.Text="CMDS  ·  "..n.."/"..#SP_ALL.." actives"; sp_cmdLbl.TextColor3=n>#SP_ALL/2 and P.FG2 or P.FG3 end
+local popupOpen=false
+local function togglePopup()
+    popupOpen=not popupOpen;sp_popup.Visible=popupOpen
+    if popupOpen then sp_popup.BackgroundTransparency=1;sp_popup.Size=UDim2.new(1,-16,0,0);sp_popup.Position=UDim2.new(0,8,0,44); TweenService:Create(sp_popup,TweenInfo.new(0.2,Enum.EasingStyle.Quart,Enum.EasingDirection.Out),{BackgroundTransparency=0,Size=UDim2.new(1,-16,0,270)}):Play(); tw(sp_gearBtn,{BackgroundColor3=P.ASOFT,TextColor3=P.ACCENT}); tw(sp_gearBtn:FindFirstChildOfClass("UIStroke"),{Color=P.ACCENT,Transparency=0.2})
+    else TweenService:Create(sp_popup,TweenInfo.new(0.15,Enum.EasingStyle.Quart,Enum.EasingDirection.In),{BackgroundTransparency=1,Size=UDim2.new(1,-16,0,0)}):Play(); task.delay(0.16,function() sp_popup.Visible=false end); tw(sp_gearBtn,{BackgroundColor3=P.SURFACE,TextColor3=P.FG2}); tw(sp_gearBtn:FindFirstChildOfClass("UIStroke"),{Color=P.BORDER2,Transparency=0.35}) end
+end
+sp_gearBtn.MouseButton1Click:Connect(togglePopup); sp_pclose.MouseButton1Click:Connect(function() if popupOpen then togglePopup() end end)
+local sp_div=Instance.new("Frame",sp_scroll); sp_div.LayoutOrder=1; sp_div.Size=UDim2.new(1,-4,0,1); sp_div.BackgroundColor3=P.BORDER; sp_div.BorderSizePixel=0
+local function sp_fireAdmin(remote,p) if not remote then return end; local cmds=_G.spamCmds or {}; for _,act in ipairs(SP_ALL) do if cmds[act] then task.spawn(function() pcall(function() remote:InvokeServer("f888ee6e-c86d-46e1-93d7-0639d6635d42",p,act) end) end) end end end
+local function getRemote() return _G.s34core and _G.s34core.AdminRemote or nil end
+local sp_rows={}
+local function sp_addRow(p)
+    if p==player or sp_rows[p.UserId] then return end
+    local row=Instance.new("Frame",sp_scroll); row.LayoutOrder=100+p.UserId%100000; row.Size=UDim2.new(1,-4,0,44); row.BackgroundColor3=P.CARD; row.BorderSizePixel=0; corner(row,7)
+    local rs=Instance.new("UIStroke",row); rs.Color=P.BORDER; rs.Thickness=1; rs.Transparency=0.45
+    local av=Instance.new("ImageLabel",row); av.Position=UDim2.new(0,7,0.5,-14); av.Size=UDim2.new(0,28,0,28); av.BackgroundTransparency=1; av.Image="rbxthumb://type=AvatarHeadShot&id="..p.UserId.."&w=150&h=150"; corner(av,1); Instance.new("UICorner",av).CornerRadius=UDim.new(1,0)
+    local nl=Instance.new("TextLabel",row); nl.Position=UDim2.new(0,42,0,6); nl.Size=UDim2.new(1,-110,0,14); nl.BackgroundTransparency=1; nl.Text=p.Name; nl.TextColor3=P.FG; nl.TextSize=10; nl.Font=Enum.Font.GothamBold; nl.TextXAlignment=Enum.TextXAlignment.Left
+    local dl=Instance.new("TextLabel",row); dl.Position=UDim2.new(0,42,0,22); dl.Size=UDim2.new(1,-110,0,12); dl.BackgroundTransparency=1; dl.Text="@"..p.Name; dl.TextColor3=P.FG2; dl.TextSize=8; dl.Font=Enum.Font.Gotham; dl.TextXAlignment=Enum.TextXAlignment.Left
+    local sb=Instance.new("TextButton",row); sb.Position=UDim2.new(1,-60,0.5,-10); sb.Size=UDim2.new(0,52,0,20); sb.BackgroundColor3=P.SURFACE; sb.BorderSizePixel=0; sb.Text="SPAM"; sb.TextColor3=P.FG2; sb.TextSize=9; sb.Font=Enum.Font.GothamBold; sb.AutoButtonColor=false; corner(sb,6)
+    local sbs=Instance.new("UIStroke",sb); sbs.Color=P.BORDER2; sbs.Thickness=1; sbs.Transparency=0.4
+    sb.MouseEnter:Connect(function() TweenService:Create(sb,TweenInfo.new(0.1),{BackgroundColor3=P.HOVER,TextColor3=P.FG}):Play(); TweenService:Create(sbs,TweenInfo.new(0.1),{Color=P.ACCENT,Transparency=0.2}):Play() end)
+    sb.MouseLeave:Connect(function() TweenService:Create(sb,TweenInfo.new(0.1),{BackgroundColor3=P.SURFACE,TextColor3=P.FG2}):Play(); TweenService:Create(sbs,TweenInfo.new(0.1),{Color=P.BORDER2,Transparency=0.4}):Play() end)
+    sb.MouseButton1Click:Connect(function()
+        local remote=getRemote(); if not remote then sb.Text="No remote";task.delay(1.5,function() sb.Text="SPAM" end);return end
+        sp_fireAdmin(remote,p); TweenService:Create(sb,TweenInfo.new(0.1),{BackgroundColor3=P.ASOFT,TextColor3=P.ACCENT}):Play(); TweenService:Create(sbs,TweenInfo.new(0.1),{Color=P.ACCENT,Transparency=0.2}):Play()
+        task.delay(1,function() TweenService:Create(sb,TweenInfo.new(0.2),{BackgroundColor3=P.SURFACE,TextColor3=P.FG2}):Play(); TweenService:Create(sbs,TweenInfo.new(0.2),{Color=P.BORDER2,Transparency=0.4}):Play() end)
+    end); sp_rows[p.UserId]=row
+end
+local function sp_removeRow(p) if sp_rows[p.UserId] then sp_rows[p.UserId]:Destroy();sp_rows[p.UserId]=nil end end
+for _,p in ipairs(Players:GetPlayers()) do sp_addRow(p) end; Players.PlayerAdded:Connect(sp_addRow); Players.PlayerRemoving:Connect(sp_removeRow)
+do
+    local d,ds,dp=false,nil,nil
+    sp_hdr.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then d=true;ds=i.Position;dp=sp_frame.Position end end)
+    sp_hdr.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then d=false end end)
+    UserInputService.InputChanged:Connect(function(i) if d and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then local delta=i.Position-ds; sp_frame.Position=UDim2.new(dp.X.Scale,dp.X.Offset+delta.X,dp.Y.Scale,dp.Y.Offset+delta.Y) end end)
+end
+end
+
+-- =============================================
+--   INSTA RESET
+-- =============================================
+do
+local resetSG=Instance.new("ScreenGui",player.PlayerGui); resetSG.Name="__34sReset"; resetSG.ResetOnSpawn=false; resetSG.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; resetSG.DisplayOrder=301
+local resetBtn=Instance.new("TextButton",resetSG); resetBtn.Size=UDim2.new(0,C.SS,0,C.SS); resetBtn.Position=UDim2.new(0,10,0.5,0)
+resetBtn.BackgroundColor3=P.CARD; resetBtn.Text=""; resetBtn.AutoButtonColor=false; resetBtn.BorderSizePixel=0; resetBtn.ZIndex=10; resetBtn.Active=true; corner(resetBtn,6); stroke(resetBtn,P.BORDER,1,0.3)
+local rL1=Instance.new("TextLabel",resetBtn); rL1.Size=UDim2.new(1,0,0.5,0); rL1.BackgroundTransparency=1; rL1.Text="INSTA"; rL1.TextColor3=P.FG2; rL1.Font=Enum.Font.GothamBlack; rL1.TextSize=C.SFS; rL1.TextXAlignment=Enum.TextXAlignment.Center
+local rL2=Instance.new("TextLabel",resetBtn); rL2.Size=UDim2.new(1,0,0.5,0); rL2.Position=UDim2.new(0,0,0.5,0); rL2.BackgroundTransparency=1; rL2.Text="RESET"; rL2.TextColor3=P.FG2; rL2.Font=Enum.Font.GothamBlack; rL2.TextSize=C.SFS; rL2.TextXAlignment=Enum.TextXAlignment.Center
+resetBtn.MouseEnter:Connect(function() tw(resetBtn,{BackgroundColor3=P.HOVER});tw(rL1,{TextColor3=P.FG});tw(rL2,{TextColor3=P.FG}) end)
+resetBtn.MouseLeave:Connect(function() tw(resetBtn,{BackgroundColor3=P.CARD});tw(rL1,{TextColor3=P.FG2});tw(rL2,{TextColor3=P.FG2}) end)
+resetBtn.MouseButton1Down:Connect(function() tw(resetBtn,{BackgroundColor3=P.RED});tw(rL1,{TextColor3=P.FG});tw(rL2,{TextColor3=P.FG}) end)
+resetBtn.MouseButton1Up:Connect(function() tw(resetBtn,{BackgroundColor3=P.HOVER}) end)
+resetBtn.MouseButton1Click:Connect(function()
+    local char=player.Character; if char then local hrp=char:FindFirstChild("HumanoidRootPart"); if hrp then hrp.AssemblyLinearVelocity=Vector3.new(0,6767676767,0) end end
+end)
+do
+    local d,ds,dp=false,nil,nil
+    resetBtn.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then d=true;ds=i.Position;dp=resetBtn.Position end end)
+    UserInputService.InputChanged:Connect(function(i) if d and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then local delta=i.Position-ds; resetBtn.Position=UDim2.new(dp.X.Scale,dp.X.Offset+delta.X,dp.Y.Scale,dp.Y.Offset+delta.Y) end end)
+    UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then d=false end end)
+end
+end
+
+-- =============================================
+--   RAGDOLL SELF
+-- =============================================
+do
+local ragSG=Instance.new("ScreenGui",player.PlayerGui); ragSG.Name="__34sRag"; ragSG.ResetOnSpawn=false; ragSG.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; ragSG.DisplayOrder=302
+local ragBtn=Instance.new("TextButton",ragSG); ragBtn.Size=UDim2.new(0,C.SS,0,C.SS); ragBtn.Position=UDim2.new(0,10,0.5,C.SOFF)
+ragBtn.BackgroundColor3=P.CARD; ragBtn.Text=""; ragBtn.AutoButtonColor=false; ragBtn.BorderSizePixel=0; ragBtn.ZIndex=10; ragBtn.Active=true; corner(ragBtn,6)
+local ragStroke=stroke(ragBtn,P.BORDER,1,0.3)
+local ragL1=Instance.new("TextLabel",ragBtn); ragL1.Size=UDim2.new(1,0,0.5,0); ragL1.BackgroundTransparency=1; ragL1.Text="RAG"; ragL1.TextColor3=P.FG2; ragL1.Font=Enum.Font.GothamBlack; ragL1.TextSize=C.SFS; ragL1.TextXAlignment=Enum.TextXAlignment.Center
+local ragL2=Instance.new("TextLabel",ragBtn); ragL2.Size=UDim2.new(1,0,0.5,0); ragL2.Position=UDim2.new(0,0,0.5,0); ragL2.BackgroundTransparency=1; ragL2.Text="DOLL"; ragL2.TextColor3=P.FG2; ragL2.Font=Enum.Font.GothamBlack; ragL2.TextSize=C.SFS; ragL2.TextXAlignment=Enum.TextXAlignment.Center
+local ragBar=Instance.new("Frame",ragBtn); ragBar.Size=UDim2.new(0,0,0,2); ragBar.Position=UDim2.new(0,0,1,-2); ragBar.BackgroundColor3=P.ORANGE; ragBar.BorderSizePixel=0; corner(ragBar,1)
+ragBtn.MouseEnter:Connect(function() tw(ragBtn,{BackgroundColor3=P.HOVER});tw(ragL1,{TextColor3=P.FG});tw(ragL2,{TextColor3=P.FG});tw(ragStroke,{Color=P.ORANGE,Transparency=0.2}) end)
+ragBtn.MouseLeave:Connect(function() tw(ragBtn,{BackgroundColor3=P.CARD});tw(ragL1,{TextColor3=P.FG2});tw(ragL2,{TextColor3=P.FG2});tw(ragStroke,{Color=P.BORDER,Transparency=0.3}) end)
+ragBtn.MouseButton1Down:Connect(function() tw(ragBtn,{BackgroundColor3=Color3.fromRGB(40,22,0)});tw(ragStroke,{Color=P.ORANGE,Transparency=0}) end)
+ragBtn.MouseButton1Up:Connect(function() tw(ragBtn,{BackgroundColor3=P.HOVER}) end)
+local function findCmdBox() local panel2=player.PlayerGui:FindFirstChild("AdminPanel");if not panel2 then return nil end; for _,v in ipairs(panel2:GetDescendants()) do if v:IsA("TextBox") then return v end end end
+local function sendCmd(cmd,target) local cmdBox=findCmdBox();if not cmdBox then return end; pcall(function() cmdBox.Text="" end);pcall(function() cmdBox.Text=cmd.." "..target end); pcall(function() cmdBox:CaptureFocus() end);pcall(function() cmdBox:ReleaseFocus(true) end); task.wait(0.013);pcall(function() mouse1click() end) end
+local spamming=false
+local function resetVisual() tw(ragBtn,{BackgroundColor3=P.CARD});tw(ragStroke,{Color=P.BORDER,Transparency=0.3}); TweenService:Create(ragBar,TweenInfo.new(0.3),{Size=UDim2.new(0,0,0,2)}):Play() end
+ragBtn.MouseButton1Click:Connect(function()
+    if spamming then spamming=false;resetVisual();return end
+    spamming=true; tw(ragBtn,{BackgroundColor3=Color3.fromRGB(40,22,0)});tw(ragStroke,{Color=P.ORANGE,Transparency=0.1})
+    task.spawn(function()
+        local t0,DUR=tick(),3
+        while spamming and tick()-t0<DUR do sendCmd(";ragdoll",player.Name); ragBar.Size=UDim2.new(math.clamp((tick()-t0)/DUR,0,1),0,0,2); task.wait(0.05) end
+        spamming=false;resetVisual()
+    end)
+end)
+do
+    local d,ds,dp=false,nil,nil
+    ragBtn.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then d=true;ds=i.Position;dp=ragBtn.Position end end)
+    UserInputService.InputChanged:Connect(function(i) if d and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then local delta=i.Position-ds; ragBtn.Position=UDim2.new(dp.X.Scale,dp.X.Offset+delta.X,dp.Y.Scale,dp.Y.Offset+delta.Y) end end)
+    UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then d=false end end)
+end
+end
